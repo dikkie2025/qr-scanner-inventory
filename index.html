@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📱 Сканер инвентаризации</title>
+    <title>📱 Сканер Orto инвентаризации</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -21,78 +21,434 @@
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        h1 { color: #333; margin-bottom: 10px; text-align: center; }
-        .subtitle { color: #666; text-align: center; margin-bottom: 25px; }
-        #reader { width: 100%; height: 300px; border: 3px solid #ddd; border-radius: 10px; }
-        .buttons { display: flex; gap: 10px; margin: 20px 0; }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .logo {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 5px;
+            font-size: 22px;
+        }
+        .subtitle { 
+            color: #666; 
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .filter-info {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #856404;
+            font-weight: bold;
+        }
+        .filter-info .prefix {
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        #reader { 
+            width: 100%; 
+            height: 300px; 
+            border: 3px solid #ddd; 
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .buttons { 
+            display: flex; 
+            gap: 10px; 
+            margin: 20px 0; 
+        }
         button { 
-            flex: 1; background: #0088cc; color: white; border: none; 
-            padding: 15px; border-radius: 10px; font-size: 16px; cursor: pointer;
+            flex: 1; 
+            padding: 16px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        #stopBtn { background: #dc3545; }
-        #result { 
-            background: #e9ffe9; padding: 15px; border-radius: 10px; 
-            margin: 15px 0; display: none; word-break: break-all;
+        #startBtn { 
+            background: #28a745; 
+            color: white; 
         }
-        .status { 
-            padding: 12px; border-radius: 8px; margin: 10px 0; 
-            display: none; text-align: center; font-weight: bold;
+        #startBtn:hover { background: #218838; }
+        #stopBtn { 
+            background: #dc3545; 
+            color: white; 
         }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .telegram-link { 
-            margin-top: 20px; text-align: center; 
-            background: #0088cc; color: white; padding: 10px;
-            border-radius: 8px; text-decoration: none; display: block;
+        #stopBtn:hover { background: #c82333; }
+        #historyBtn {
+            background: #6c757d;
+            color: white;
+        }
+        #historyBtn:hover { background: #5a6268; }
+        .scan-result {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        #resultText {
+            font-family: monospace;
+            font-size: 16px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+            margin-bottom: 15px;
+        }
+        .qr-preview {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .qr-preview img {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .status-message { 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin: 10px 0; 
+            display: none; 
+            text-align: center;
+            font-weight: bold;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning { 
+            background: #fff3cd; 
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 12px;
+        }
+        .instructions {
+            background: #e7f5ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .instructions ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        .instructions li {
+            margin: 5px 0;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .test-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .valid-test { background: #28a745; }
+        .invalid-test { background: #dc3545; }
+        
+        /* Модальное окно истории */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-code {
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .history-time {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            #reader { height: 250px; }
+            .buttons { flex-direction: column; }
+            button { width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📱 Сканер инвентаризации</h1>
-        <p class="subtitle">Наведите камеру на QR-код товара</p>
+        <!-- Заголовок -->
+        <div class="header">
+            <div class="logo">🦷</div>
+            <h1>Сканер Orto инвентаризации</h1>
+            <p class="subtitle">Сканируйте только QR-коды начинающиеся с "orto"</p>
+        </div>
         
+        <!-- Информация о фильтре -->
+        <div class="filter-info">
+            🔍 Сканер принимает только коды с префиксом: 
+            <span class="prefix">orto</span>
+            <div style="font-size: 12px; margin-top: 5px; font-weight: normal;">
+                Пример: orto-12345, orto-chair-001, ortodesk-2024
+            </div>
+        </div>
+        
+        <!-- Область сканирования -->
         <div id="reader"></div>
         
+        <!-- Кнопки управления -->
         <div class="buttons">
-            <button id="startBtn">▶ Начать сканирование</button>
-            <button id="stopBtn" style="display:none;">⏹ Остановить</button>
+            <button id="startBtn">
+                <span>▶</span>
+                <span>Начать сканирование</span>
+            </button>
+            <button id="stopBtn" style="display:none;">
+                <span>⏹</span>
+                <span>Остановить</span>
+            </button>
+            <button id="historyBtn" onclick="showHistory()">
+                <span>📋</span>
+                <span>История</span>
+            </button>
         </div>
         
-        <div id="result">
-            <strong>Отсканировано:</strong><br>
-            <span id="resultText"></span>
+        <!-- Результат сканирования -->
+        <div class="scan-result" id="scanResult">
+            <div class="result-header">
+                <h3>Результат сканирования:</h3>
+                <div class="status-badge" id="statusBadge"></div>
+            </div>
+            <div id="resultText"></div>
+            <div class="qr-preview" id="qrPreview"></div>
         </div>
         
-        <div id="status" class="status"></div>
+        <!-- Статус -->
+        <div class="status-message" id="statusMessage"></div>
         
-        <div style="margin-top: 20px; color: #666; font-size: 14px;">
-            <p><strong>Инструкция:</strong></p>
-            <p>1. Нажмите "Начать сканирование"</p>
-            <p>2. Разрешите доступ к камере</p>
-            <p>3. Наведите на QR-код на расстоянии 15-20 см</p>
-            <p>4. Данные автоматически отправятся</p>
+        <!-- Инструкция -->
+        <div class="instructions">
+            <p><strong>Как использовать:</strong></p>
+            <ul>
+                <li>Нажмите "Начать сканирование"</li>
+                <li>Разрешите доступ к камере</li>
+                <li>Наведите камеру на QR-код Orto</li>
+                <li>Система проверит код и отправит в Telegram</li>
+                <li>Невалидные коды игнорируются</li>
+            </ul>
+            
+            <div class="test-buttons">
+                <button class="valid-test" onclick="testValidCode()">
+                    Тест валидного кода (orto-001)
+                </button>
+                <button class="invalid-test" onclick="testInvalidCode()">
+                    Тест невалидного кода (other-001)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalScans">0</div>
+                <div class="stat-label">Всего сканов</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="validScans">0</div>
+                <div class="stat-label">Валидных</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="rejectedScans">0</div>
+                <div class="stat-label">Отклонено</div>
+            </div>
+        </div>
+        
+        <!-- Ссылка на настройки -->
+        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
+            <p>Для настройки Telegram введите данные в поле ниже:</p>
+            <input type="text" id="telegramToken" placeholder="Токен бота" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <input type="text" id="telegramChatId" placeholder="Chat ID" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="saveTelegramConfig()" style="background: #17a2b8; color: white; width: 100%; margin-top: 10px;">Сохранить настройки Telegram</button>
+        </div>
+    </div>
+    
+    <!-- Модальное окно истории -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 История сканирования</h3>
+                <button class="close-modal" onclick="hideHistory()">×</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+            <button onclick="clearHistory()" style="background: #dc3545; color: white; width: 100%; margin-top: 15px;">Очистить историю</button>
+            <button onclick="exportHistory()" style="background: #28a745; color: white; width: 100%; margin-top: 10px;">📥 Экспорт в CSV</button>
         </div>
     </div>
 
     <script>
-        // 🔧 НАСТРОЙКИ - ЗАМЕНИТЕ ЭТИ ДАННЫЕ!
-        const TELEGRAM_CONFIG = {
-            token: 'ВАШ_ТОКЕН_БОТА', // Замените на токен от @BotFather
-            chatId: 'ВАШ_CHAT_ID'    // Замените на ваш ID чата
+        // ========== КОНФИГУРАЦИЯ ==========
+        const ORTO_PREFIX = "orto"; // Код должен начинаться с этой строки
+        const ORTO_PREFIX_LENGTH = 4; // Длина "orto"
+        
+        // Настройки Telegram (будут сохранены в localStorage)
+        let telegramConfig = {
+            token: localStorage.getItem('telegram_token') || '',
+            chatId: localStorage.getItem('telegram_chat_id') || ''
         };
         
+        // ========== ПЕРЕМЕННЫЕ ==========
         let scanner = null;
-        let scanCount = 0;
+        let scanHistory = JSON.parse(localStorage.getItem('scan_history') || '[]');
+        let stats = JSON.parse(localStorage.getItem('scan_stats') || '{"total":0,"valid":0,"rejected":0}');
         
-        // Элементы страницы
+        // ========== ЭЛЕМЕНТЫ СТРАНИЦЫ ==========
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const resultDiv = document.getElementById('result');
+        const scanResult = document.getElementById('scanResult');
         const resultText = document.getElementById('resultText');
-        const statusDiv = document.getElementById('status');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusMessage = document.getElementById('statusMessage');
+        const qrPreview = document.getElementById('qrPreview');
         
-        // Запуск сканирования
+        // Статистика
+        const totalScansEl = document.getElementById('totalScans');
+        const validScansEl = document.getElementById('validScans');
+        const rejectedScansEl = document.getElementById('rejectedScans');
+        
+        // Telegram настройки
+        const telegramTokenInput = document.getElementById('telegramToken');
+        const telegramChatIdInput = document.getElementById('telegramChatId');
+        
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        function init() {
+            // Загружаем историю и статистику
+            updateStats();
+            
+            // Загружаем настройки Telegram
+            if (telegramConfig.token) {
+                telegramTokenInput.value = telegramConfig.token;
+                telegramChatIdInput.value = telegramConfig.chatId;
+            }
+            
+            // Привязка событий
+            startBtn.addEventListener('click', startScanner);
+            stopBtn.addEventListener('click', stopScanner);
+            
+            console.log('Сканер инициализирован. Префикс для проверки:', ORTO_PREFIX);
+        }
+        
+        // ========== СКАНЕР ==========
         async function startScanner() {
             try {
                 scanner = new Html5Qrcode("reader");
@@ -113,14 +469,13 @@
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'block';
                 
-                showStatus("📷 Камера активирована. Наведите на QR-код", "success");
+                showStatus("📷 Сканирование запущено. Ищем QR-коды Orto...", "warning");
                 
             } catch (error) {
                 showStatus("❌ Ошибка: " + error.message, "error");
             }
         }
         
-        // Остановка сканирования
         async function stopScanner() {
             if (scanner) {
                 try {
@@ -134,52 +489,202 @@
             }
         }
         
-        // Успешное сканирование
+        // ========== ПРОВЕРКА И ОБРАБОТКА QR-КОДА ==========
         async function onScanSuccess(decodedText) {
-            // Показать результат
-            resultText.textContent = decodedText;
-            resultDiv.style.display = 'block';
-            
-            // Временно остановить сканер
+            // Временно останавливаем сканер
             if (scanner) {
                 await scanner.pause();
             }
             
-            // Отправить в Telegram
-            const success = await sendToTelegram(decodedText);
+            // Показываем результат
+            resultText.textContent = decodedText;
+            scanResult.style.display = 'block';
             
-            if (success) {
-                scanCount++;
-                showStatus(`✅ Отправлено! Всего: ${scanCount}`, "success");
+            // Проверяем префикс
+            const isOrtoCode = checkOrtoPrefix(decodedText);
+            
+            // Обновляем статистику
+            stats.total++;
+            
+            if (isOrtoCode) {
+                // ВАЛИДНЫЙ код Orto
+                stats.valid++;
+                statusBadge.textContent = "✅ ВАЛИДНЫЙ";
+                statusBadge.className = "status-badge status-valid";
+                
+                // Добавляем в историю
+                addToHistory(decodedText, true);
+                
+                // Показываем успешное сообщение
+                showStatus(`✅ Принят код Orto: ${decodedText}`, "success");
+                
+                // Отправляем в Telegram если настроено
+                if (telegramConfig.token && telegramConfig.chatId) {
+                    await sendToTelegram(decodedText);
+                }
+                
+                // Создаем предпросмотр QR
+                createQRPreview(decodedText);
+                
             } else {
-                showStatus("❌ Ошибка отправки", "error");
+                // НЕВАЛИДНЫЙ код
+                stats.rejected++;
+                statusBadge.textContent = "❌ НЕВАЛИДНЫЙ";
+                statusBadge.className = "status-badge status-invalid";
+                
+                // Добавляем в историю как отклоненный
+                addToHistory(decodedText, false);
+                
+                // Показываем сообщение об ошибке
+                showStatus(`❌ Код отклонен. Должен начинаться с "${ORTO_PREFIX}"`, "error");
+                
+                // Очищаем превью
+                qrPreview.innerHTML = '';
             }
             
-            // Возобновить через 3 секунды
+            // Обновляем статистику на экране и в хранилище
+            updateStats();
+            localStorage.setItem('scan_stats', JSON.stringify(stats));
+            
+            // Возобновляем сканирование через 3 секунды
             setTimeout(async () => {
                 if (scanner) {
                     await scanner.resume();
-                    resultDiv.style.display = 'none';
-                    statusDiv.style.display = 'none';
+                    
+                    // Плавно скрываем результаты
+                    scanResult.style.display = 'none';
+                    statusMessage.style.display = 'none';
                 }
             }, 3000);
         }
         
-        // Ошибка сканирования
         function onScanError(error) {
             // Игнорируем некоторые ошибки
         }
         
-        // Отправка в Telegram
-        async function sendToTelegram(qrData) {
-            // Если токен не настроен, просто показываем данные
-            if (TELEGRAM_CONFIG.token === 'ВАШ_ТОКЕН_БОТА') {
-                console.log("Тестовый режим. QR-код:", qrData);
+        // ========== ПРОВЕРКА ПРЕФИКСА "orto" ==========
+        function checkOrtoPrefix(code) {
+            // Приводим к нижнему регистру для проверки
+            const lowerCode = code.toLowerCase().trim();
+            
+            // Проверяем несколько вариантов:
+            // 1. Начинается строго с "orto"
+            // 2. Или содержит "orto" как часть в начале (с дефисом/подчеркиванием)
+            
+            // Вариант 1: Строго начинается с "orto"
+            if (lowerCode.startsWith(ORTO_PREFIX)) {
                 return true;
             }
             
+            // Вариант 2: Проверяем первые 4-5 символов
+            const firstPart = lowerCode.substring(0, ORTO_PREFIX_LENGTH + 1);
+            if (firstPart.includes(ORTO_PREFIX)) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // ========== РАБОТА С ИСТОРИЕЙ ==========
+        function addToHistory(code, isValid) {
+            const scanRecord = {
+                id: Date.now(),
+                code: code,
+                isValid: isValid,
+                timestamp: new Date().toISOString(),
+                timeDisplay: new Date().toLocaleString('ru-RU')
+            };
+            
+            scanHistory.unshift(scanRecord); // Добавляем в начало
+            if (scanHistory.length > 100) {
+                scanHistory = scanHistory.slice(0, 100); // Ограничиваем историю
+            }
+            
+            localStorage.setItem('scan_history', JSON.stringify(scanHistory));
+        }
+        
+        function showHistory() {
+            const modal = document.getElementById('historyModal');
+            const historyList = document.getElementById('historyList');
+            
+            if (scanHistory.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; color: #666;">История сканирования пуста</p>';
+            } else {
+                let html = '';
+                scanHistory.forEach(record => {
+                    const status = record.isValid ? '✅' : '❌';
+                    html += `
+                        <div class="history-item">
+                            <div>
+                                <div class="history-code">${status} ${record.code}</div>
+                                <div class="history-time">${record.timeDisplay}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                historyList.innerHTML = html;
+            }
+            
+            modal.style.display = 'flex';
+        }
+        
+        function hideHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+        
+        function clearHistory() {
+            if (confirm('Очистить всю историю сканирования?')) {
+                scanHistory = [];
+                localStorage.setItem('scan_history', JSON.stringify(scanHistory));
+                showHistory();
+            }
+        }
+        
+        function exportHistory() {
+            let csv = 'ID;QR код;Статус;Дата/время\n';
+            scanHistory.forEach(record => {
+                const status = record.isValid ? 'VALID' : 'REJECTED';
+                csv += `${record.id};${record.code};${status};${record.timeDisplay}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `orto_scans_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            showStatus('📥 История экспортирована в CSV', 'success');
+        }
+        
+        // ========== СТАТИСТИКА ==========
+        function updateStats() {
+            totalScansEl.textContent = stats.total;
+            validScansEl.textContent = stats.valid;
+            rejectedScansEl.textContent = stats.rejected;
+        }
+        
+        // ========== TELEGRAM ==========
+        function saveTelegramConfig() {
+            const token = telegramTokenInput.value.trim();
+            const chatId = telegramChatIdInput.value.trim();
+            
+            if (token && chatId) {
+                telegramConfig.token = token;
+                telegramConfig.chatId = chatId;
+                
+                localStorage.setItem('telegram_token', token);
+                localStorage.setItem('telegram_chat_id', chatId);
+                
+                showStatus('✅ Настройки Telegram сохранены', 'success');
+            } else {
+                showStatus('⚠️ Заполните оба поля', 'warning');
+            }
+        }
+        
+        async function sendToTelegram(qrData) {
             try {
-                const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`;
+                const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -187,35 +692,81 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        chat_id: TELEGRAM_CONFIG.chatId,
-                        text: `📦 Скан инвентаризации:\nКод: ${qrData}\nВремя: ${new Date().toLocaleString()}\nУстройство: Мобильный сканер`,
+                        chat_id: telegramConfig.chatId,
+                        text: `🦷 Orto Scan\n✅ Код: ${qrData}\n🕐 Время: ${new Date().toLocaleString('ru-RU')}\n📱 Устройство: Мобильный сканер`,
                         parse_mode: 'HTML'
                     })
                 });
                 
-                return response.ok;
+                if (response.ok) {
+                    console.log('Отправлено в Telegram:', qrData);
+                    return true;
+                } else {
+                    console.error('Ошибка Telegram API:', await response.text());
+                    return false;
+                }
                 
             } catch (error) {
-                console.error("Ошибка Telegram:", error);
+                console.error('Ошибка отправки в Telegram:', error);
                 return false;
             }
         }
         
-        // Показать статус
+        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
         function showStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+            
+            // Автоскрытие для информационных сообщений
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
         }
         
-        // Привязка событий
-        startBtn.addEventListener('click', startScanner);
-        stopBtn.addEventListener('click', stopScanner);
-        
-        // Проверка настроек
-        if (TELEGRAM_CONFIG.token === 'ВАШ_ТОКЕН_БОТА') {
-            showStatus("⚠️ Настройте Telegram токен и chat_id в коде", "error");
+        function createQRPreview(text) {
+            // Создаем миниатюру QR кода для отображения
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
+            qrPreview.innerHTML = `<img src="${qrUrl}" alt="QR Preview">`;
         }
+        
+        // ========== ТЕСТОВЫЕ ФУНКЦИИ ==========
+        function testValidCode() {
+            const testCodes = [
+                'orto-001',
+                'ORTO-CHAIR-2024',
+                'ortodesk-15',
+                'orto_stool_blue',
+                'OrtoMonitor-27inch'
+            ];
+            const randomCode = testCodes[Math.floor(Math.random() * testCodes.length)];
+            onScanSuccess(randomCode);
+        }
+        
+        function testInvalidCode() {
+            const testCodes = [
+                'office-001',
+                'chair-15',
+                'desk_black',
+                'monitor-samsung',
+                'other-product'
+            ];
+            const randomCode = testCodes[Math.floor(Math.random() * testCodes.length)];
+            onScanSuccess(randomCode);
+        }
+        
+        // ========== ЗАПУСК ПРИЛОЖЕНИЯ ==========
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // Закрытие модального окна при клике вне его
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('historyModal');
+            if (event.target === modal) {
+                hideHistory();
+            }
+        });
     </script>
 </body>
 </html>
