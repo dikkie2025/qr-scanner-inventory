@@ -67,6 +67,29 @@
             margin-top: 5px;
         }
         
+        /* Информация об устройстве */
+        .device-info {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e8ecef;
+            font-size: 13px;
+        }
+        
+        .device-id {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 5px;
+            word-break: break-all;
+            font-size: 12px;
+            color: #0056a3;
+            border: 1px dashed #c1d7f0;
+        }
+        
         /* Область сканера */
         .scanner-section {
             margin-bottom: 30px;
@@ -450,6 +473,15 @@
             <h1>Сканер инвентаризации</h1>
             <p class="subtitle">Сканируйте Orto QR-коды</p>
             <p class="tagline">Отправка по готовности</p>
+            
+            <!-- Информация об устройстве -->
+            <div class="device-info">
+                <div>ID устройства:</div>
+                <div class="device-id" id="deviceId">Загрузка...</div>
+                <div style="font-size: 11px; color: #888; margin-top: 8px;">
+                    Этот ID будет отправлен в Telegram для идентификации сканера
+                </div>
+            </div>
         </div>
         
         <!-- Сканер -->
@@ -544,6 +576,7 @@
         let scanner = null;
         let scannedCodes = []; // Массив уникальных кодов
         let lastScannedCode = ''; // Последний отсканированный код
+        let deviceId = ''; // Уникальный ID устройства
         
         // ========== ЭЛЕМЕНТЫ ==========
         const startBtn = document.getElementById('startBtn');
@@ -555,6 +588,7 @@
         const counter = document.getElementById('counter');
         const sendCount = document.getElementById('sendCount');
         const notification = document.getElementById('notification');
+        const deviceIdElement = document.getElementById('deviceId');
         
         // Настройки
         const settingsToggle = document.getElementById('settingsToggle');
@@ -563,8 +597,111 @@
         const telegramChatIdInput = document.getElementById('telegramChatId');
         const saveSettingsBtn = document.getElementById('saveSettings');
         
+        // ========== ГЕНЕРАЦИЯ ID УСТРОЙСТВА ==========
+        async function generateDeviceId() {
+            // Пытаемся получить максимально уникальный идентификатор
+            let id = '';
+            
+            try {
+                // 1. Проверяем наличие уникального ID в localStorage
+                const savedId = localStorage.getItem('device_id');
+                if (savedId) {
+                    deviceId = savedId;
+                    deviceIdElement.textContent = savedId;
+                    console.log('Используем сохранённый ID устройства:', savedId);
+                    return savedId;
+                }
+                
+                // 2. Пытаемся получить IMEI (только на Android через Cordova/PhoneGap)
+                if (window.cordova && cordova.plugins.imei) {
+                    const imei = await new Promise((resolve, reject) => {
+                        cordova.plugins.imei.get(
+                            result => resolve(result),
+                            error => reject(error)
+                        );
+                    });
+                    if (imei) {
+                        id = 'IMEI_' + imei.substring(0, 8);
+                    }
+                }
+                
+                // 3. Пытаемся получить серийный номер (экспериментальные API)
+                if (!id && window.Android && window.Android.getSerial) {
+                    try {
+                        const serial = window.Android.getSerial();
+                        if (serial) id = 'SERIAL_' + serial;
+                    } catch (e) {}
+                }
+                
+                // 4. Генерируем на основе доступных данных браузера
+                if (!id) {
+                    // Собираем доступные данные
+                    const userAgent = navigator.userAgent;
+                    const platform = navigator.platform;
+                    const language = navigator.language;
+                    const hardwareConcurrency = navigator.hardwareConcurrency || 'unknown';
+                    const deviceMemory = navigator.deviceMemory || 'unknown';
+                    
+                    // Создаём хэш из доступных данных
+                    const dataString = `${userAgent}-${platform}-${language}-${hardwareConcurrency}-${deviceMemory}`;
+                    const hash = await createHash(dataString);
+                    id = 'WEB_' + hash.substring(0, 12);
+                }
+                
+                // 5. Сохраняем в localStorage
+                deviceId = id;
+                localStorage.setItem('device_id', id);
+                deviceIdElement.textContent = id;
+                
+                console.log('Сгенерирован ID устройства:', id);
+                return id;
+                
+            } catch (error) {
+                console.error('Ошибка генерации ID устройства:', error);
+                
+                // Фолбэк: используем случайный ID
+                const fallbackId = 'RND_' + Math.random().toString(36).substring(2, 12) + 
+                                  Date.now().toString(36);
+                deviceId = fallbackId;
+                localStorage.setItem('device_id', fallbackId);
+                deviceIdElement.textContent = fallbackId;
+                
+                return fallbackId;
+            }
+        }
+        
+        // Функция создания хэша
+        async function createHash(string) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(string);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Получение информации об устройстве
+        function getDeviceInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                vendor: navigator.vendor || 'unknown',
+                screen: `${window.screen.width}x${window.screen.height}`,
+                cores: navigator.hardwareConcurrency || 'unknown',
+                memory: navigator.deviceMemory || 'unknown',
+                touch: 'ontouchstart' in window ? 'yes' : 'no',
+                cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timestamp: new Date().toISOString()
+            };
+            return info;
+        }
+        
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
-        function init() {
+        async function init() {
+            // Генерируем/получаем ID устройства
+            await generateDeviceId();
+            
             // Загружаем сохранённые коды
             const savedCodes = localStorage.getItem('scanned_codes');
             if (savedCodes) {
@@ -771,7 +908,7 @@
             sendBtn.innerHTML = '<span>⏳</span><span>Отправка...</span>';
             
             try {
-                // Формируем сообщение
+                // Формируем сообщение с ID устройства
                 const message = createTelegramMessage(scannedCodes);
                 
                 // Отправляем
@@ -804,14 +941,25 @@
         
         function createTelegramMessage(codes) {
             const timestamp = new Date().toLocaleString('ru-RU');
+            const deviceInfo = getDeviceInfo();
+            
             let message = `🦷 *Orto Инвентаризация*\n`;
             message += `📅 ${timestamp}\n`;
+            message += `📱 Устройство: ${deviceId}\n`;
             message += `📦 Количество: ${codes.length}\n\n`;
             message += `*Список кодов:*\n`;
             
             codes.forEach((code, index) => {
                 message += `${index + 1}. \`${code}\`\n`;
             });
+            
+            message += `\n---\n`;
+            message += `*Информация об устройстве:*\n`;
+            message += `• Платформа: ${deviceInfo.platform}\n`;
+            message += `• Экран: ${deviceInfo.screen}\n`;
+            message += `• Язык: ${deviceInfo.language}\n`;
+            message += `• Временная зона: ${deviceInfo.timezone}\n`;
+            message += `• ID сессии: ${sessionStorage.getItem('session_id') || 'не задан'}\n`;
             
             return message;
         }
