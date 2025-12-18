@@ -516,7 +516,7 @@
                     <div class="input-group">
                         <label for="telegramChatId">Chat ID</label>
                         <input type="text" id="telegramChatId" placeholder="123456789" 
-                               value="544081544">
+                               value="2132584938">
                     </div>
                     
                     <button class="btn btn-primary" id="saveSettings" style="width: 100%;">
@@ -537,7 +537,7 @@
         // Настройки Telegram
         let telegramConfig = {
             token: localStorage.getItem('telegram_token') || '7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE',
-            chatId: localStorage.getItem('telegram_chat_id') || '544081544'
+            chatId: localStorage.getItem('telegram_chat_id') || '2132584938'
         };
         
         // ========== СОСТОЯНИЕ ==========
@@ -587,6 +587,11 @@
             
             // Проверяем настройки Telegram
             checkTelegramConfig();
+            
+            // Тестовое уведомление
+            setTimeout(() => {
+                showNotification('✅ Telegram настроен. Chat ID: ' + telegramConfig.chatId, 'success');
+            }, 1000);
         }
         
         // ========== СКАНЕР ==========
@@ -778,7 +783,7 @@
                 const success = await sendTelegramMessage(message);
                 
                 if (success) {
-                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success');
+                    showNotification(`✅ Успешно отправлено ${scannedCodes.length} кодов в Telegram`, 'success');
                     
                     // Очищаем список после успешной отправки
                     scannedCodes = [];
@@ -788,11 +793,11 @@
                     updateCounters();
                     
                 } else {
-                    showNotification('❌ Ошибка отправки', 'error');
+                    showNotification('❌ Ошибка отправки в Telegram', 'error');
                 }
                 
             } catch (error) {
-                showNotification('❌ Ошибка сети', 'error');
+                showNotification('❌ Ошибка сети при отправке', 'error');
                 console.error('Ошибка отправки:', error);
                 
             } finally {
@@ -835,22 +840,48 @@
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    console.error('Ошибка Telegram:', data);
-                    if (data.description && data.description.includes('bot was blocked')) {
-                        showNotification('❌ Бот заблокирован пользователем', 'error');
-                    } else if (data.description && data.description.includes('chat not found')) {
-                        showNotification('❌ Chat ID не найден', 'error');
-                    } else if (data.description && data.description.includes('invalid token')) {
-                        showNotification('❌ Неверный токен бота', 'error');
+                    console.error('Ошибка Telegram API:', data);
+                    if (data.description) {
+                        if (data.description.includes('bot was blocked')) {
+                            showNotification('❌ Бот заблокирован пользователем', 'error');
+                        } else if (data.description.includes('chat not found')) {
+                            showNotification('❌ Chat ID не найден. Ваш ID: ' + telegramConfig.chatId, 'error');
+                        } else if (data.description.includes('invalid token')) {
+                            showNotification('❌ Неверный токен бота', 'error');
+                        } else {
+                            showNotification('❌ Ошибка Telegram: ' + data.description, 'error');
+                        }
                     }
                     return false;
                 }
                 
+                console.log('Сообщение отправлено успешно:', data);
                 return true;
                 
             } catch (error) {
                 console.error('Ошибка сети:', error);
+                showNotification('❌ Ошибка сети. Проверьте подключение к интернету', 'error');
                 throw error;
+            }
+        }
+        
+        // ========== ТЕСТОВАЯ ОТПРАВКА ==========
+        async function testTelegramConnection() {
+            try {
+                const url = `https://api.telegram.org/bot${telegramConfig.token}/getMe`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    console.log('✅ Бот доступен:', data.result.username);
+                    return true;
+                } else {
+                    console.error('❌ Бот недоступен:', data);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка проверки бота:', error);
+                return false;
             }
         }
         
@@ -877,6 +908,15 @@
             showNotification('✅ Настройки сохранены', 'success');
             checkTelegramConfig();
             
+            // Тестируем соединение
+            testTelegramConnection().then(success => {
+                if (success) {
+                    showNotification('✅ Telegram бот доступен', 'success');
+                } else {
+                    showNotification('⚠️ Проверьте настройки Telegram', 'warning');
+                }
+            });
+            
             // Скрываем настройки
             setTimeout(() => {
                 settingsContent.classList.remove('show');
@@ -885,7 +925,7 @@
         
         function checkTelegramConfig() {
             if (telegramConfig.token && telegramConfig.chatId) {
-                console.log('Telegram настроен');
+                console.log('Telegram настроен. Токен:', telegramConfig.token.substring(0, 10) + '...', 'Chat ID:', telegramConfig.chatId);
             }
         }
         
@@ -903,6 +943,19 @@
         
         // ========== ЗАПУСК ==========
         document.addEventListener('DOMContentLoaded', init);
+        
+        // Тестируем соединение при загрузке
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testTelegramConnection().then(success => {
+                    if (success) {
+                        console.log('✅ Telegram бот доступен');
+                    } else {
+                        console.log('⚠️ Telegram бот недоступен. Проверьте настройки.');
+                    }
+                });
+            }, 2000);
+        });
     </script>
 </body>
 </html>
