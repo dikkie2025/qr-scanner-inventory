@@ -510,7 +510,7 @@
                     <div class="input-group">
                         <label for="telegramToken">Токен бота</label>
                         <input type="text" id="telegramToken" placeholder="123456:ABC-DEF..." 
-                               value="7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE">
+                               value="8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og">
                     </div>
                     
                     <div class="input-group">
@@ -536,7 +536,7 @@
         
         // Настройки Telegram
         let telegramConfig = {
-            token: localStorage.getItem('telegram_token') || '7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE',
+            token: localStorage.getItem('telegram_token') || '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og',
             chatId: localStorage.getItem('telegram_chat_id') || '2132584938'
         };
         
@@ -590,7 +590,7 @@
             
             // Тестовое уведомление
             setTimeout(() => {
-                showNotification('✅ Telegram настроен. Chat ID: ' + telegramConfig.chatId, 'success');
+                showNotification('✅ Telegram настроен. Бот активен.', 'success');
             }, 1000);
         }
         
@@ -818,12 +818,20 @@
                 message += `${index + 1}. \`${code}\`\n`;
             });
             
+            // Добавляем итоговую информацию
+            message += `\n✅ *Итого:* ${codes.length} шт.`;
+            
             return message;
         }
         
         async function sendTelegramMessage(message) {
             try {
                 const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
+                
+                console.log('Отправка сообщения в Telegram...');
+                console.log('URL:', url.substring(0, 50) + '...');
+                console.log('Chat ID:', telegramConfig.chatId);
+                console.log('Текст сообщения (первые 100 символов):', message.substring(0, 100) + '...');
                 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -838,6 +846,7 @@
                 });
                 
                 const data = await response.json();
+                console.log('Ответ от Telegram:', data);
                 
                 if (!response.ok) {
                     console.error('Ошибка Telegram API:', data);
@@ -855,11 +864,11 @@
                     return false;
                 }
                 
-                console.log('Сообщение отправлено успешно:', data);
+                console.log('✅ Сообщение отправлено успешно!');
                 return true;
                 
             } catch (error) {
-                console.error('Ошибка сети:', error);
+                console.error('❌ Ошибка сети:', error);
                 showNotification('❌ Ошибка сети. Проверьте подключение к интернету', 'error');
                 throw error;
             }
@@ -869,18 +878,22 @@
         async function testTelegramConnection() {
             try {
                 const url = `https://api.telegram.org/bot${telegramConfig.token}/getMe`;
+                console.log('Тестирование подключения к боту...');
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.ok) {
                     console.log('✅ Бот доступен:', data.result.username);
+                    showNotification('✅ Бот активен: ' + data.result.username, 'success');
                     return true;
                 } else {
                     console.error('❌ Бот недоступен:', data);
+                    showNotification('❌ Бот недоступен. Проверьте токен', 'error');
                     return false;
                 }
             } catch (error) {
                 console.error('❌ Ошибка проверки бота:', error);
+                showNotification('❌ Ошибка сети при проверке бота', 'error');
                 return false;
             }
         }
@@ -899,6 +912,12 @@
                 return;
             }
             
+            // Проверяем формат токена
+            if (!token.includes(':') || token.split(':')[0].length < 5) {
+                showNotification('❌ Неверный формат токена', 'error');
+                return;
+            }
+            
             telegramConfig.token = token;
             telegramConfig.chatId = chatId;
             
@@ -912,8 +931,6 @@
             testTelegramConnection().then(success => {
                 if (success) {
                     showNotification('✅ Telegram бот доступен', 'success');
-                } else {
-                    showNotification('⚠️ Проверьте настройки Telegram', 'warning');
                 }
             });
             
@@ -925,7 +942,8 @@
         
         function checkTelegramConfig() {
             if (telegramConfig.token && telegramConfig.chatId) {
-                console.log('Telegram настроен. Токен:', telegramConfig.token.substring(0, 10) + '...', 'Chat ID:', telegramConfig.chatId);
+                const tokenPreview = telegramConfig.token.substring(0, 10) + '...';
+                console.log('Telegram настроен. Токен:', tokenPreview, 'Chat ID:', telegramConfig.chatId);
             }
         }
         
@@ -941,19 +959,46 @@
             }, 3000);
         }
         
+        // ========== БЫСТРЫЙ ТЕСТ ==========
+        async function quickTest() {
+            // Проверяем подключение к боту
+            const botAvailable = await testTelegramConnection();
+            
+            if (botAvailable) {
+                // Тестовая отправка
+                const testMessage = `🦷 *Orto Scanner Тест*\n✅ Приложение готово к работе!\n📅 ${new Date().toLocaleString('ru-RU')}\n\n*Тестовое сообщение*`;
+                
+                try {
+                    const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            chat_id: telegramConfig.chatId,
+                            text: testMessage,
+                            parse_mode: 'Markdown'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('✅ Тестовое сообщение отправлено');
+                        showNotification('✅ Бот работает! Тестовое сообщение отправлено', 'success');
+                    }
+                } catch (error) {
+                    console.log('Тестовая отправка пропущена');
+                }
+            }
+        }
+        
         // ========== ЗАПУСК ==========
         document.addEventListener('DOMContentLoaded', init);
         
         // Тестируем соединение при загрузке
         window.addEventListener('load', () => {
             setTimeout(() => {
-                testTelegramConnection().then(success => {
-                    if (success) {
-                        console.log('✅ Telegram бот доступен');
-                    } else {
-                        console.log('⚠️ Telegram бот недоступен. Проверьте настройки.');
-                    }
-                });
+                quickTest();
             }, 2000);
         });
     </script>
