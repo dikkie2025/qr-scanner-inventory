@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Сканер инвентаризации</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 { color: #333; margin-bottom: 10px; text-align: center; }
+        .subtitle { color: #666; text-align: center; margin-bottom: 25px; }
+        #reader { width: 100%; height: 300px; border: 3px solid #ddd; border-radius: 10px; }
+        .buttons { display: flex; gap: 10px; margin: 20px 0; }
+        button { 
+            flex: 1; background: #0088cc; color: white; border: none; 
+            padding: 15px; border-radius: 10px; font-size: 16px; cursor: pointer;
+        }
+        #stopBtn { background: #dc3545; }
+        #result { 
+            background: #e9ffe9; padding: 15px; border-radius: 10px; 
+            margin: 15px 0; display: none; word-break: break-all;
+        }
+        .status { 
+            padding: 12px; border-radius: 8px; margin: 10px 0; 
+            display: none; text-align: center; font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .telegram-link { 
+            margin-top: 20px; text-align: center; 
+            background: #0088cc; color: white; padding: 10px;
+            border-radius: 8px; text-decoration: none; display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Сканер инвентаризации</h1>
+        <p class="subtitle">Наведите камеру на QR-код товара</p>
+        
+        <div id="reader"></div>
+        
+        <div class="buttons">
+            <button id="startBtn">▶ Начать сканирование</button>
+            <button id="stopBtn" style="display:none;">⏹ Остановить</button>
+        </div>
+        
+        <div id="result">
+            <strong>Отсканировано:</strong><br>
+            <span id="resultText"></span>
+        </div>
+        
+        <div id="status" class="status"></div>
+        
+        <div style="margin-top: 20px; color: #666; font-size: 14px;">
+            <p><strong>Инструкция:</strong></p>
+            <p>1. Нажмите "Начать сканирование"</p>
+            <p>2. Разрешите доступ к камере</p>
+            <p>3. Наведите на QR-код на расстоянии 15-20 см</p>
+            <p>4. Данные автоматически отправятся</p>
+        </div>
+    </div>
+
+    <script>
+        // 🔧 НАСТРОЙКИ - ЗАМЕНИТЕ ЭТИ ДАННЫЕ!
+        const TELEGRAM_CONFIG = {
+            token: 'ВАШ_ТОКЕН_БОТА', // Замените на токен от @BotFather
+            chatId: 'ВАШ_CHAT_ID'    // Замените на ваш ID чата
+        };
+        
+        let scanner = null;
+        let scanCount = 0;
+        
+        // Элементы страницы
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resultDiv = document.getElementById('result');
+        const resultText = document.getElementById('resultText');
+        const statusDiv = document.getElementById('status');
+        
+        // Запуск сканирования
+        async function startScanner() {
+            try {
+                scanner = new Html5Qrcode("reader");
+                
+                const config = { 
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                };
+                
+                await scanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+                
+                // Переключение кнопок
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                
+                showStatus("📷 Камера активирована. Наведите на QR-код", "success");
+                
+            } catch (error) {
+                showStatus("❌ Ошибка: " + error.message, "error");
+            }
+        }
+        
+        // Остановка сканирования
+        async function stopScanner() {
+            if (scanner) {
+                try {
+                    await scanner.stop();
+                    startBtn.style.display = 'block';
+                    stopBtn.style.display = 'none';
+                    showStatus("Сканирование остановлено", "error");
+                } catch (error) {
+                    console.error("Ошибка остановки:", error);
+                }
+            }
+        }
+        
+        // Успешное сканирование
+        async function onScanSuccess(decodedText) {
+            // Показать результат
+            resultText.textContent = decodedText;
+            resultDiv.style.display = 'block';
+            
+            // Временно остановить сканер
+            if (scanner) {
+                await scanner.pause();
+            }
+            
+            // Отправить в Telegram
+            const success = await sendToTelegram(decodedText);
+            
+            if (success) {
+                scanCount++;
+                showStatus(`✅ Отправлено! Всего: ${scanCount}`, "success");
+            } else {
+                showStatus("❌ Ошибка отправки", "error");
+            }
+            
+            // Возобновить через 3 секунды
+            setTimeout(async () => {
+                if (scanner) {
+                    await scanner.resume();
+                    resultDiv.style.display = 'none';
+                    statusDiv.style.display = 'none';
+                }
+            }, 3000);
+        }
+        
+        // Ошибка сканирования
+        function onScanError(error) {
+            // Игнорируем некоторые ошибки
+        }
+        
+        // Отправка в Telegram
+        async function sendToTelegram(qrData) {
+            // Если токен не настроен, просто показываем данные
+            if (TELEGRAM_CONFIG.token === 'ВАШ_ТОКЕН_БОТА') {
+                console.log("Тестовый режим. QR-код:", qrData);
+                return true;
+            }
+            
+            try {
+                const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CONFIG.chatId,
+                        text: `📦 Скан инвентаризации:\nКод: ${qrData}\nВремя: ${new Date().toLocaleString()}\nУстройство: Мобильный сканер`,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                return response.ok;
+                
+            } catch (error) {
+                console.error("Ошибка Telegram:", error);
+                return false;
+            }
+        }
+        
+        // Показать статус
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+        
+        // Привязка событий
+        startBtn.addEventListener('click', startScanner);
+        stopBtn.addEventListener('click', stopScanner);
+        
+        // Проверка настроек
+        if (TELEGRAM_CONFIG.token === 'ВАШ_ТОКЕН_БОТА') {
+            showStatus("⚠️ Настройте Telegram токен и chat_id в коде", "error");
+        }
+    </script>
+</body>
+</html>
