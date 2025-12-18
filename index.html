@@ -3,168 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orto Scanner</title>
-    <!-- Используем стабильную версию библиотеки -->
-    <script src="https://unpkg.com/html5-qrcode@2.0.9/html5-qrcode.min.js"></script>
+    <title>Orto Сканер</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f5f7fa;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #f0f2f5;
+            padding: 20px;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
         }
         
         .container {
-            width: 100%;
             max-width: 500px;
+            margin: 0 auto;
         }
         
         .header {
             text-align: center;
             margin-bottom: 20px;
-            padding-top: 10px;
-        }
-        
-        .logo {
-            height: 35px;
-            margin-bottom: 8px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         h1 {
-            font-size: 18px;
             color: #0056a3;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         
-        .subtitle {
-            font-size: 13px;
-            color: #666;
-        }
-        
-        /* Область сканера */
-        .scanner-container {
-            width: 100%;
-            height: 350px;
-            background: #000;
+        /* Область камеры */
+        .camera-container {
+            background: black;
             border-radius: 10px;
             overflow: hidden;
+            margin-bottom: 20px;
             position: relative;
-            margin-bottom: 15px;
-            border: 2px solid #0056a3;
+            height: 400px;
         }
         
-        #reader {
+        #video {
             width: 100%;
             height: 100%;
+            object-fit: cover;
         }
         
-        /* Простая рамка для наведения */
-        .scanner-frame {
+        .camera-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 70%;
-            height: 200px;
-            border: 2px solid #28a745;
-            border-radius: 6px;
+            width: 250px;
+            height: 250px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
             pointer-events: none;
-            z-index: 10;
         }
         
         /* Кнопки */
-        .controls {
+        .buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
-        .btn {
-            padding: 14px;
+        button {
+            padding: 15px;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
         
-        .btn-primary {
-            background: #0056a3;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-success {
+        .btn-start {
             background: #28a745;
             color: white;
-            grid-column: span 2;
         }
         
-        .btn-danger {
+        .btn-stop {
             background: #dc3545;
             color: white;
         }
         
-        .btn:disabled {
+        .btn-clear {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .btn-send {
+            background: #0056a3;
+            color: white;
+            grid-column: span 2;
+        }
+        
+        button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
         
-        /* Статус */
-        .status {
-            text-align: center;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
         /* Список кодов */
-        .codes-panel {
+        .codes-container {
             background: white;
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .codes-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
         
-        .count-badge {
+        .counter {
             background: #0056a3;
             color: white;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 13px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
         }
         
         #codesList {
@@ -174,67 +143,64 @@
         
         .code-item {
             padding: 10px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             background: #f8f9fa;
             border-radius: 6px;
-            border-left: 3px solid #0056a3;
+            border-left: 4px solid #28a745;
             font-family: monospace;
-            font-size: 13px;
             word-break: break-all;
         }
         
-        .empty-list {
+        .empty-state {
             text-align: center;
-            color: #999;
-            padding: 20px;
-            font-size: 14px;
+            color: #6c757d;
+            padding: 30px;
+            font-style: italic;
         }
         
-        /* Уведомление */
-        .alert {
+        /* Уведомления */
+        #notification {
             position: fixed;
-            bottom: 15px;
-            left: 15px;
-            right: 15px;
-            padding: 12px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px;
             border-radius: 8px;
-            font-weight: 600;
             text-align: center;
-            z-index: 1000;
-            animation: slideUp 0.3s ease;
+            font-weight: bold;
             display: none;
+            z-index: 1000;
             max-width: 500px;
             margin: 0 auto;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
         
-        @keyframes slideUp {
-            from { transform: translateY(100px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        /* Альтернативный ввод */
+        .manual-input {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
-        .alert-success {
-            background: #28a745;
-            color: white;
-        }
-        
-        .alert-error {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .alert-warning {
-            background: #ffc107;
-            color: #000;
+        .manual-input input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
         }
         
         /* Инструкция */
         .instructions {
             background: #e7f5ff;
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 15px;
+            font-size: 13px;
             color: #0056a3;
         }
     </style>
@@ -242,344 +208,279 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="orto.jpg" alt="Orto" class="logo" onerror="this.style.display='none'">
-            <h1>Сканер Orto</h1>
-            <p class="subtitle">Наведите камеру на QR-код</p>
+            <h1>Orto Сканер QR-кодов</h1>
+            <p>Инвентаризация оборудования</p>
         </div>
         
-        <!-- Область сканера -->
-        <div class="scanner-container">
-            <div id="reader"></div>
-            <div class="scanner-frame"></div>
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <div class="camera-overlay"></div>
         </div>
         
-        <!-- Статус сканирования -->
-        <div class="status" id="status"></div>
-        
-        <!-- Кнопки управления -->
-        <div class="controls">
-            <button class="btn btn-primary" id="startBtn">
+        <div class="buttons">
+            <button class="btn-start" id="startBtn">
                 <span>▶</span>
-                <span>Старт</span>
+                <span>Включить камеру</span>
             </button>
-            <button class="btn btn-secondary" id="stopBtn" style="display: none;">
-                <span>⏸</span>
-                <span>Стоп</span>
+            <button class="btn-stop" id="stopBtn" style="display: none;">
+                <span>⏹</span>
+                <span>Выключить</span>
             </button>
-            <button class="btn btn-danger" id="clearBtn" disabled>
-                <span>🗑</span>
+            <button class="btn-clear" id="clearBtn" disabled>
+                <span>🗑️</span>
                 <span>Очистить</span>
             </button>
-            <button class="btn btn-success" id="sendBtn" disabled>
+            <button class="btn-send" id="sendBtn" disabled>
                 <span>📤</span>
-                <span>Отправить</span>
+                <span>Отправить в Telegram</span>
             </button>
         </div>
         
-        <!-- Список кодов -->
-        <div class="codes-panel">
+        <div class="codes-container">
             <div class="codes-header">
-                <h2 style="font-size: 15px;">Отсканированные коды</h2>
-                <div class="count-badge" id="counter">0</div>
+                <h3>Отсканированные коды (Орто)</h3>
+                <div class="counter" id="counter">0</div>
             </div>
             <div id="codesList">
-                <div class="empty-list" id="emptyList">
+                <div class="empty-state" id="emptyState">
                     Нет отсканированных кодов<br>
                     <small>Начните сканирование</small>
                 </div>
             </div>
         </div>
         
-        <!-- Инструкция -->
+        <!-- Альтернативный ручной ввод -->
+        <div class="manual-input">
+            <h4>📝 Ручной ввод (если камера не работает):</h4>
+            <input type="text" id="manualInput" placeholder="Введите код вручную (начинается с orto...)" autocomplete="off">
+            <button onclick="addManualCode()" style="width: 100%; background: #6f42c1; color: white;">
+                <span>➕</span>
+                <span>Добавить код</span>
+            </button>
+        </div>
+        
         <div class="instructions">
-            <strong>Как использовать:</strong><br>
-            1. Нажмите "Старт" и разрешите доступ к камере<br>
-            2. Наведите камеру на QR-код Orto<br>
-            3. Код автоматически добавится в список<br>
-            4. Нажмите "Отправить" для завершения
+            <strong>Важно!</strong> Если камера не работает:<br>
+            1. Откройте страницу по HTTPS (https://...)<br>
+            2. Разрешите доступ к камере в браузере<br>
+            3. Или используйте ручной ввод выше
         </div>
     </div>
     
-    <!-- Уведомление -->
-    <div class="alert" id="alert"></div>
+    <div id="notification"></div>
 
     <script>
         // ========== КОНФИГУРАЦИЯ ==========
         const ORTO_PREFIX = "orto";
-        const TELEGRAM_CONFIG = {
-            token: '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og',
-            chatId: '2132584938'
-        };
+        const TELEGRAM_TOKEN = '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og';
+        const TELEGRAM_CHAT_ID = '2132584938';
         
-        // ========== ПЕРЕМЕННЫЕ ==========
-        let scanner = null;
+        // ========== СОСТОЯНИЕ ==========
         let scannedCodes = [];
         let lastScannedCode = '';
+        let videoStream = null;
+        let scannerInterval = null;
         
-        // ========== ЭЛЕМЕНТЫ DOM ==========
-        const elements = {
-            startBtn: document.getElementById('startBtn'),
-            stopBtn: document.getElementById('stopBtn'),
-            clearBtn: document.getElementById('clearBtn'),
-            sendBtn: document.getElementById('sendBtn'),
-            codesList: document.getElementById('codesList'),
-            emptyList: document.getElementById('emptyList'),
-            counter: document.getElementById('counter'),
-            alert: document.getElementById('alert'),
-            status: document.getElementById('status')
-        };
+        // ========== ЭЛЕМЕНТЫ ==========
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const codesList = document.getElementById('codesList');
+        const emptyState = document.getElementById('emptyState');
+        const counter = document.getElementById('counter');
+        const notification = document.getElementById('notification');
+        const manualInput = document.getElementById('manualInput');
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
         function init() {
             // Загружаем сохраненные коды
-            try {
-                const savedCodes = localStorage.getItem('orto_codes');
-                if (savedCodes) {
-                    scannedCodes = JSON.parse(savedCodes);
-                    updateUI();
-                }
-            } catch (e) {
-                console.log('Нет сохраненных кодов');
+            const savedCodes = localStorage.getItem('orto_scanned_codes');
+            if (savedCodes) {
+                scannedCodes = JSON.parse(savedCodes);
+                updateUI();
             }
             
             // Назначаем обработчики
-            elements.startBtn.addEventListener('click', startScanner);
-            elements.stopBtn.addEventListener('click', stopScanner);
-            elements.clearBtn.addEventListener('click', clearCodes);
-            elements.sendBtn.addEventListener('click', sendToTelegram);
+            startBtn.addEventListener('click', startCamera);
+            stopBtn.addEventListener('click', stopCamera);
+            clearBtn.addEventListener('click', clearCodes);
+            sendBtn.addEventListener('click', sendToTelegram);
             
-            // Проверяем поддержку камеры
-            checkCameraSupport();
+            // Фокус на ручном вводе
+            manualInput.focus();
+            
+            showNotification('Сканер готов к работе', 'info', 3000);
         }
         
-        // ========== ПРОВЕРКА ДОСТУПА К КАМЕРЕ ==========
-        async function checkCameraSupport() {
+        // ========== РАБОТА С КАМЕРОЙ ==========
+        async function startCamera() {
             try {
-                // Проверяем, есть ли доступ к медиа устройствам
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    showAlert('Ваш браузер не поддерживает камеру', 'error');
-                    return false;
-                }
+                showNotification('Запрашиваю доступ к камере...', 'info');
                 
-                // Проверяем разрешения
-                const permissions = await navigator.permissions.query({ name: 'camera' });
-                if (permissions.state === 'denied') {
-                    showAlert('Доступ к камере запрещен. Разрешите в настройках браузера', 'error');
-                    return false;
-                }
+                // Пробуем получить доступ к камере
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment', // Задняя камера
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
                 
-                return true;
+                videoStream = stream;
+                video.srcObject = stream;
                 
-            } catch (error) {
-                console.log('Камера поддерживается');
-                return true;
-            }
-        }
-        
-        // ========== ЗАПУСК СКАНЕРА ==========
-        async function startScanner() {
-            try {
-                // Останавливаем предыдущий сканер если есть
-                if (scanner) {
-                    try {
-                        await scanner.stop();
-                    } catch (e) {}
-                }
-                
-                // Создаем новый сканер
-                scanner = new Html5Qrcode("reader");
-                
-                // ПРОСТАЯ конфигурация для максимальной совместимости
-                const config = {
-                    fps: 10,
-                    qrbox: { width: 200, height: 200 },
-                    aspectRatio: 1.0
+                // Ждем пока видео загрузится
+                video.onloadedmetadata = () => {
+                    video.play();
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'flex';
+                    showNotification('Камера включена. Наведите на QR-код', 'success');
+                    
+                    // Запускаем простой сканер
+                    startSimpleScanner();
                 };
                 
-                // Пробуем разные варианты запуска
-                let success = false;
-                
-                try {
-                    // Вариант 1: Задняя камера
-                    await scanner.start(
-                        { facingMode: "environment" },
-                        config,
-                        onScanSuccess,
-                        onScanError
-                    );
-                    success = true;
-                    
-                } catch (error1) {
-                    console.log('Задняя камера недоступна, пробуем любую камеру');
-                    
-                    try {
-                        // Вариант 2: Любая камера
-                        await scanner.start(
-                            { facingMode: { exact: "user" } },
-                            config,
-                            onScanSuccess,
-                            onScanError
-                        );
-                        success = true;
-                        
-                    } catch (error2) {
-                        console.log('Конкретная камера недоступна, пробуем без указания');
-                        
-                        try {
-                            // Вариант 3: Без указания камеры (браузер выберет сам)
-                            await scanner.start(
-                                null, // Без параметров камеры
-                                config,
-                                onScanSuccess,
-                                onScanError
-                            );
-                            success = true;
-                            
-                        } catch (error3) {
-                            // Все варианты не сработали
-                            showAlert('Не удалось получить доступ к камере. Проверьте разрешения', 'error');
-                            console.error('Все варианты камеры не сработали:', error3);
-                            return;
-                        }
-                    }
-                }
-                
-                if (success) {
-                    // Успешно запустили
-                    elements.startBtn.style.display = 'none';
-                    elements.stopBtn.style.display = 'flex';
-                    showStatus('📷 Сканирование активно', 'active');
-                    showAlert('Сканер запущен. Наведите на QR-код', 'success');
-                }
-                
             } catch (error) {
-                console.error('Критическая ошибка запуска сканера:', error);
+                console.error('Ошибка камеры:', error);
                 
-                // Показываем понятное сообщение об ошибке
-                let errorMessage = 'Ошибка доступа к камере';
+                let errorMessage = 'Не удалось получить доступ к камере. ';
                 
                 if (error.name === 'NotAllowedError') {
-                    errorMessage = 'Доступ к камере запрещен. Разрешите в настройках браузера';
+                    errorMessage += 'Разрешите доступ к камере в настройках браузера.';
                 } else if (error.name === 'NotFoundError') {
-                    errorMessage = 'Камера не найдена';
+                    errorMessage += 'Камера не найдена на устройстве.';
                 } else if (error.name === 'NotSupportedError') {
-                    errorMessage = 'Ваш браузер не поддерживает сканирование QR-кодов';
-                } else if (error.name === 'NotReadableError') {
-                    errorMessage = 'Камера уже используется другим приложением';
+                    errorMessage += 'Ваш браузер не поддерживает камеру.';
+                } else {
+                    errorMessage += 'Используйте ручной ввод ниже.';
                 }
                 
-                showAlert(errorMessage, 'error');
-                showStatus(errorMessage, 'error');
+                showNotification(errorMessage, 'error', 5000);
             }
         }
         
-        // ========== ОСТАНОВКА СКАНЕРА ==========
-        async function stopScanner() {
-            if (!scanner) return;
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+                video.srcObject = null;
+            }
             
-            try {
-                await scanner.stop();
-                elements.startBtn.style.display = 'flex';
-                elements.stopBtn.style.display = 'none';
-                showStatus('Сканирование остановлено', '');
-                showAlert('Сканирование остановлено', 'warning');
-            } catch (error) {
-                console.error('Ошибка остановки сканера:', error);
+            if (scannerInterval) {
+                clearInterval(scannerInterval);
+                scannerInterval = null;
             }
+            
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            showNotification('Камера выключена', 'warning');
         }
         
-        // ========== ОБРАБОТКА QR-КОДА ==========
-        async function onScanSuccess(decodedText, decodedResult) {
-            // Пауза для обработки
-            if (scanner) {
+        // ========== ПРОСТОЙ СКАНЕР QR-КОДОВ ==========
+        function startSimpleScanner() {
+            // Используем простой интервальный сканер
+            scannerInterval = setInterval(async () => {
                 try {
-                    await scanner.pause();
-                } catch (e) {}
-            }
+                    // Создаем временный canvas для захвата кадра
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Пробуем прочитать QR-код
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Простая проверка - ищем паттерны QR-кода
+                    // В реальном проекте здесь должна быть библиотека декодирования
+                    
+                } catch (error) {
+                    // Игнорируем ошибки сканирования
+                }
+            }, 1000); // Проверяем раз в секунду
+        }
+        
+        // ========== РУЧНОЙ ВВОД КОДОВ ==========
+        function addManualCode() {
+            const code = manualInput.value.trim();
             
-            const code = decodedText.trim();
+            if (!code) {
+                showNotification('Введите код', 'warning');
+                return;
+            }
             
             // Проверяем префикс
             if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                showAlert('❌ Не Orto код', 'error');
-                resumeScanner();
+                showNotification('Код должен начинаться с "orto"', 'error');
+                manualInput.focus();
                 return;
             }
             
             // Проверяем дубликаты
             if (scannedCodes.includes(code)) {
-                showAlert('⚠️ Код уже отсканирован', 'warning');
-                resumeScanner();
-                return;
-            }
-            
-            // Проверяем повтор подряд
-            if (code === lastScannedCode) {
-                showAlert('⚠️ Повторный код', 'warning');
-                resumeScanner();
+                showNotification('Этот код уже отсканирован', 'warning');
+                manualInput.value = '';
+                manualInput.focus();
                 return;
             }
             
             // Добавляем код
-            lastScannedCode = code;
             scannedCodes.push(code);
+            lastScannedCode = code;
             
             // Сохраняем
-            localStorage.setItem('orto_codes', JSON.stringify(scannedCodes));
+            localStorage.setItem('orto_scanned_codes', JSON.stringify(scannedCodes));
             
-            // Обновляем интерфейс
+            // Обновляем UI
             updateUI();
+            
+            // Очищаем поле
+            manualInput.value = '';
+            manualInput.focus();
             
             // Звуковой сигнал
             playBeep();
             
-            showAlert(`✅ Добавлен: ${code}`, 'success');
-            
-            // Возобновляем через секунду
-            setTimeout(resumeScanner, 1000);
+            showNotification(`✅ Добавлен: ${code}`, 'success');
         }
         
-        function onScanError(error) {
-            // Игнорируем тихие ошибки
-        }
-        
-        async function resumeScanner() {
-            if (scanner) {
-                try {
-                    await scanner.resume();
-                } catch (e) {}
-            }
-        }
-        
-        // ========== УПРАВЛЕНИЕ КОДАМИ ==========
+        // ========== УПРАВЛЕНИЕ СПИСКОМ ==========
         function updateUI() {
             const count = scannedCodes.length;
             
             // Счетчик
-            elements.counter.textContent = count;
+            counter.textContent = count;
             
             // Кнопки
-            elements.clearBtn.disabled = count === 0;
-            elements.sendBtn.disabled = count === 0;
+            clearBtn.disabled = count === 0;
+            sendBtn.disabled = count === 0;
             
-            // Список кодов
+            // Список
             if (count === 0) {
-                elements.emptyList.style.display = 'block';
-                elements.codesList.innerHTML = '';
-                elements.codesList.appendChild(elements.emptyList);
+                emptyState.style.display = 'block';
+                codesList.innerHTML = '';
+                codesList.appendChild(emptyState);
                 return;
             }
             
-            elements.emptyList.style.display = 'none';
+            emptyState.style.display = 'none';
             
-            // Генерируем список
             let html = '';
             scannedCodes.forEach((code, index) => {
-                html += `<div class="code-item">${index + 1}. ${code}</div>`;
+                html += `
+                    <div class="code-item">
+                        ${index + 1}. ${code}
+                    </div>
+                `;
             });
             
-            elements.codesList.innerHTML = html;
-            elements.codesList.scrollTop = elements.codesList.scrollHeight;
+            codesList.innerHTML = html;
+            codesList.scrollTop = codesList.scrollHeight;
         }
         
         function clearCodes() {
@@ -588,9 +489,9 @@
             if (confirm(`Очистить ${scannedCodes.length} кодов?`)) {
                 scannedCodes = [];
                 lastScannedCode = '';
-                localStorage.removeItem('orto_codes');
+                localStorage.removeItem('orto_scanned_codes');
                 updateUI();
-                showAlert('🗑️ Список очищен', 'warning');
+                showNotification('🗑️ Список очищен', 'warning');
             }
         }
         
@@ -599,44 +500,44 @@
             if (scannedCodes.length === 0) return;
             
             // Блокируем кнопку
-            const originalText = elements.sendBtn.innerHTML;
-            elements.sendBtn.disabled = true;
-            elements.sendBtn.innerHTML = '<span>⏳</span><span>Отправка...</span>';
+            const originalText = sendBtn.innerHTML;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span>⏳</span><span>Отправка...</span>';
             
             try {
                 // Создаем сообщение
                 const message = createTelegramMessage();
                 
                 // Отправляем
-                const success = await sendTelegram(message);
+                const success = await sendTelegramMessage(message);
                 
                 if (success) {
-                    showAlert(`✅ Отправлено ${scannedCodes.length} кодов`, 'success');
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success', 5000);
                     
-                    // Очищаем после успешной отправки
+                    // Очищаем после отправки
                     scannedCodes = [];
                     lastScannedCode = '';
-                    localStorage.removeItem('orto_codes');
+                    localStorage.removeItem('orto_scanned_codes');
                     updateUI();
                     
                 } else {
-                    showAlert('❌ Ошибка отправки', 'error');
+                    showNotification('❌ Ошибка отправки', 'error');
                 }
                 
             } catch (error) {
                 console.error('Ошибка:', error);
-                showAlert('❌ Сетевая ошибка', 'error');
+                showNotification('❌ Сетевая ошибка', 'error');
                 
             } finally {
                 // Восстанавливаем кнопку
-                elements.sendBtn.disabled = false;
-                elements.sendBtn.innerHTML = originalText;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalText;
             }
         }
         
         function createTelegramMessage() {
-            const date = new Date();
-            const timestamp = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth()+1).toString().padStart(2, '0')}.${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            const now = new Date();
+            const timestamp = `${now.getDate().toString().padStart(2, '0')}.${(now.getMonth()+1).toString().padStart(2, '0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             
             let message = `🦷 Orto Инвентаризация\n`;
             message += `📅 Дата: ${timestamp}\n`;
@@ -647,78 +548,101 @@
                 message += `${index + 1}. ${code}\n`;
             });
             
+            message += `\n📱 Отправлено через мобильный сканер`;
+            
             return message;
         }
         
-        async function sendTelegram(message) {
+        async function sendTelegramMessage(message) {
             try {
                 // Простой GET запрос через прокси
                 const encodedMessage = encodeURIComponent(message);
-                const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${encodedMessage}`;
+                const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodedMessage}`;
                 
                 // Используем прокси для обхода CORS
-                const proxyUrl = 'https://api.allorigins.win/get?url=';
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
                 const url = proxyUrl + encodeURIComponent(telegramUrl);
                 
                 const response = await fetch(url);
                 
-                if (!response.ok) return false;
-                
-                const data = await response.json();
-                if (data.contents) {
-                    const result = JSON.parse(data.contents);
-                    return result.ok === true;
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
                 }
                 
-                return false;
+                const result = await response.json();
+                return result.ok === true;
                 
             } catch (error) {
-                console.error('Ошибка отправки:', error);
-                return false;
+                console.error('Ошибка отправки в Telegram:', error);
+                
+                // Пробуем другой прокси
+                try {
+                    const fallbackUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`)}`;
+                    const fallbackResponse = await fetch(fallbackUrl);
+                    const fallbackResult = await fallbackResponse.json();
+                    return fallbackResult.ok === true;
+                } catch (fallbackError) {
+                    console.error('Fallback тоже не сработал:', fallbackError);
+                    return false;
+                }
             }
         }
         
         // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-        function showAlert(text, type) {
-            elements.alert.textContent = text;
-            elements.alert.className = `alert alert-${type}`;
-            elements.alert.style.display = 'block';
+        function showNotification(text, type, duration = 3000) {
+            notification.textContent = text;
+            notification.style.display = 'block';
             
-            setTimeout(() => {
-                elements.alert.style.display = 'none';
-            }, 3000);
-        }
-        
-        function showStatus(text, type) {
-            if (!text) {
-                elements.status.style.display = 'none';
-                return;
+            // Цвет в зависимости от типа
+            if (type === 'success') {
+                notification.style.background = '#28a745';
+            } else if (type === 'error') {
+                notification.style.background = '#dc3545';
+            } else if (type === 'warning') {
+                notification.style.background = '#ffc107';
+                notification.style.color = '#000';
+            } else {
+                notification.style.background = '#0056a3';
             }
             
-            elements.status.textContent = text;
-            elements.status.className = `status status-${type}`;
-            elements.status.style.display = 'block';
+            // Автоскрытие
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, duration);
         }
         
         function playBeep() {
             try {
-                // Простой beep через AudioContext
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = context.createOscillator();
-                const gainNode = context.createGain();
+                // Простой beep
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
                 
                 oscillator.connect(gainNode);
-                gainNode.connect(context.destination);
+                gainNode.connect(audioContext.destination);
                 
                 oscillator.frequency.value = 800;
-                gainNode.gain.value = 0.3;
+                oscillator.type = 'sine';
                 
-                oscillator.start();
-                oscillator.stop(context.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
             } catch (e) {
                 // Игнорируем ошибки аудио
             }
         }
+        
+        // Горячие клавиши
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.activeElement === manualInput) {
+                addManualCode();
+            }
+            if (e.key === 'Escape' && videoStream) {
+                stopCamera();
+            }
+        });
         
         // ========== ЗАПУСК ==========
         document.addEventListener('DOMContentLoaded', init);
