@@ -6,37 +6,127 @@
     <title>Orto Scanner</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
+        /* Общие стили */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: #f5f5f5;
         }
         
         .container {
             max-width: 500px;
             margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
         }
         
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Шапка */
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
         .logo {
-            height: 60px;
+            height: 70px;
             width: auto;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         
+        .page-title {
+            font-size: 18px;
+            color: #0056a3;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        /* Главная страница */
+        .main-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .menu-btn {
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        
+        .menu-btn-receipt {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .menu-btn-shipment {
+            background: linear-gradient(135deg, #17a2b8, #20c9c9);
+            color: white;
+        }
+        
+        .menu-btn-inventory {
+            background: linear-gradient(135deg, #6f42c1, #9b6bcc);
+            color: white;
+        }
+        
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Страница сканера */
         #reader {
             width: 100%;
-            height: 300px;
+            height: 280px;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 20px;
             border: 3px solid #0056a3;
+        }
+        
+        .scanner-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .operation-badge {
+            background: #0056a3;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
         }
         
         .controls {
@@ -45,7 +135,7 @@
             margin-bottom: 20px;
         }
         
-        button {
+        .btn {
             flex: 1;
             padding: 12px;
             border: none;
@@ -55,27 +145,34 @@
             font-weight: bold;
         }
         
-        #startBtn {
+        .btn-start {
             background: #28a745;
             color: white;
         }
         
-        #stopBtn {
+        .btn-stop {
             background: #dc3545;
             color: white;
             display: none;
         }
         
-        #clearBtn {
+        .btn-clear {
             background: #6c757d;
             color: white;
         }
         
-        #sendBtn {
+        .btn-send {
             background: #17a2b8;
             color: white;
             width: 100%;
             margin-bottom: 10px;
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
         }
         
         button:disabled {
@@ -122,6 +219,7 @@
             border-left: 4px solid #0056a3;
             font-family: monospace;
             word-break: break-all;
+            font-size: 14px;
         }
         
         #notification {
@@ -136,6 +234,7 @@
             display: none;
             z-index: 1000;
             max-width: 300px;
+            text-align: center;
         }
         
         .error-message {
@@ -151,80 +250,202 @@
             font-size: 11px;
             color: #666;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px;
             opacity: 0.7;
+        }
+        
+        /* Анимация загрузки */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            #reader {
+                height: 250px;
+            }
+            
+            .menu-btn {
+                padding: 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="orto.jpg" alt="Orto" class="logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZ300bGUiPk9SVE88L3RleHQ+PC9zdmc+';">
-            <div style="font-size: 14px; color: #666; margin-top: 5px;">Сканер QR-кодов</div>
-        </div>
-        
-        <div class="error-message" id="errorMessage">
-            Ошибка доступа к камере. Разрешите доступ к камере и обновите страницу.
-        </div>
-        
-        <div id="reader"></div>
-        
-        <div class="controls">
-            <button id="startBtn">▶ СТАРТ</button>
-            <button id="stopBtn">⏹ СТОП</button>
-            <button id="clearBtn" disabled>🗑 ОЧИСТИТЬ</button>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-box">
-                <div class="stat-value" id="count">0</div>
-                <div>Кодов</div>
+    <!-- Главная страница -->
+    <div id="mainPage" class="page active">
+        <div class="container">
+            <div class="header">
+                <img src="orto.jpg" alt="Orto" class="logo" 
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T1JUTzwvdGV4dD48L3N2Zz4=';">
+                <div style="font-size: 16px; color: #666; margin-top: 5px;">Система учёта товара</div>
             </div>
-        </div>
-        
-        <div class="codes-list" id="codesList">
-            <div style="text-align: center; color: #999; padding: 20px;">
-                Здесь будут отсканированные коды
+            
+            <div class="page-title">Выберите операцию</div>
+            
+            <div class="main-menu">
+                <button class="menu-btn menu-btn-receipt" data-operation="receipt">
+                    <span>📥</span>
+                    <span>Поступление товара</span>
+                </button>
+                
+                <button class="menu-btn menu-btn-shipment" data-operation="shipment">
+                    <span>📤</span>
+                    <span>Отгрузка товара</span>
+                </button>
+                
+                <button class="menu-btn menu-btn-inventory" data-operation="inventory">
+                    <span>📋</span>
+                    <span>Инвентаризация</span>
+                </button>
             </div>
-        </div>
-        
-        <button id="sendBtn" disabled>📤 ОТПРАВИТЬ В TELEGRAM</button>
-        
-        <div class="device-info" id="deviceInfo">
-            Загрузка информации об устройстве...
+            
+            <div class="device-info">
+                Версия 1.0 • <span id="deviceIdPreview">Загрузка...</span>
+            </div>
         </div>
     </div>
     
+    <!-- Страница сканирования -->
+    <div id="scannerPage" class="page">
+        <div class="container">
+            <div class="scanner-header">
+                <div id="operationTitle" class="page-title">Сканирование</div>
+                <div id="operationBadge" class="operation-badge">Операция</div>
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                Ошибка доступа к камере. Разрешите доступ к камере и обновите страницу.
+            </div>
+            
+            <div id="reader"></div>
+            
+            <div class="controls">
+                <button id="startBtn" class="btn btn-start">▶ СТАРТ</button>
+                <button id="stopBtn" class="btn btn-stop">⏹ СТОП</button>
+                <button id="clearBtn" class="btn btn-clear" disabled>🗑 ОЧИСТИТЬ</button>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="count">0</div>
+                    <div>Кодов</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="operationType">-</div>
+                    <div>Тип</div>
+                </div>
+            </div>
+            
+            <div class="codes-list" id="codesList">
+                <div style="text-align: center; color: #999; padding: 20px;">
+                    Здесь будут отсканированные коды
+                </div>
+            </div>
+            
+            <button id="sendBtn" class="btn btn-send" disabled>📤 ОТПРАВИТЬ В TELEGRAM</button>
+            <button id="backBtn" class="btn btn-back">← НАЗАД В МЕНЮ</button>
+        </div>
+    </div>
+    
+    <!-- Уведомление -->
     <div id="notification"></div>
 
     <script>
         // Конфигурация
         const ORTO_PREFIX = "orto";
+        const OPERATIONS = {
+            receipt: {
+                name: "Поступление товара",
+                emoji: "📥",
+                color: "#28a745"
+            },
+            shipment: {
+                name: "Отгрузка товара",
+                emoji: "📤",
+                color: "#17a2b8"
+            },
+            inventory: {
+                name: "Инвентаризация",
+                emoji: "📋",
+                color: "#6f42c1"
+            }
+        };
+        
+        // Состояние приложения
+        let currentOperation = null;
         let scanner = null;
         let scannedCodes = [];
         let isScanning = false;
-        let deviceId = null; // Уникальный идентификатор устройства
+        let deviceId = null;
         
-        // Элементы
+        // Элементы страниц
+        const pages = {
+            main: document.getElementById('mainPage'),
+            scanner: document.getElementById('scannerPage')
+        };
+        
+        // Элементы сканера
         const elements = {
             startBtn: document.getElementById('startBtn'),
             stopBtn: document.getElementById('stopBtn'),
             clearBtn: document.getElementById('clearBtn'),
             sendBtn: document.getElementById('sendBtn'),
+            backBtn: document.getElementById('backBtn'),
             codesList: document.getElementById('codesList'),
             count: document.getElementById('count'),
+            operationType: document.getElementById('operationType'),
+            operationTitle: document.getElementById('operationTitle'),
+            operationBadge: document.getElementById('operationBadge'),
             notification: document.getElementById('notification'),
             errorMessage: document.getElementById('errorMessage'),
-            deviceInfo: document.getElementById('deviceInfo')
+            deviceIdPreview: document.getElementById('deviceIdPreview')
         };
+        
+        // Переключение страниц
+        function showPage(pageName) {
+            // Скрываем все страницы
+            Object.values(pages).forEach(page => page.classList.remove('active'));
+            
+            // Показываем нужную страницу
+            if (pages[pageName]) {
+                pages[pageName].classList.add('active');
+            }
+            
+            // Если переходим на главную, останавливаем сканер
+            if (pageName === 'main' && isScanning) {
+                stopScanner();
+            }
+        }
+        
+        // Установка операции
+        function setOperation(operationKey) {
+            if (!OPERATIONS[operationKey]) return;
+            
+            currentOperation = operationKey;
+            const operation = OPERATIONS[operationKey];
+            
+            // Обновляем интерфейс
+            elements.operationTitle.textContent = operation.name;
+            elements.operationBadge.textContent = operation.name;
+            elements.operationBadge.style.background = operation.color;
+            elements.operationType.textContent = operation.emoji;
+            
+            // Переходим на страницу сканера
+            showPage('scanner');
+        }
         
         // Генерация уникального ID устройства
         function generateDeviceId() {
-            // Пробуем получить сохраненный ID или генерируем новый
             let id = localStorage.getItem('orto_device_id');
             
             if (!id) {
-                // Генерируем уникальный ID на основе времени и случайных чисел
                 const timestamp = Date.now().toString(36);
                 const random = Math.random().toString(36).substr(2, 9);
                 id = 'dev_' + timestamp + '_' + random;
@@ -234,10 +455,12 @@
             return id;
         }
         
-        // Получение информации об устройстве (без IMEI, т.к. недоступно из браузера)
+        // Получение информации об устройстве
         async function getDeviceInfo() {
             const info = {
                 deviceId: deviceId,
+                operation: currentOperation,
+                operationName: OPERATIONS[currentOperation]?.name || 'Неизвестно',
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
                 language: navigator.language,
@@ -246,25 +469,11 @@
                 timestamp: new Date().toISOString()
             };
             
-            // Пытаемся получить больше информации
             if (navigator.connection) {
                 info.connectionType = navigator.connection.effectiveType;
             }
             
-            if (navigator.deviceMemory) {
-                info.deviceMemory = navigator.deviceMemory + 'GB';
-            }
-            
-            if (navigator.hardwareConcurrency) {
-                info.cores = navigator.hardwareConcurrency;
-            }
-            
             return info;
-        }
-        
-        // Обновление информации об устройстве в интерфейсе
-        function updateDeviceInfo() {
-            elements.deviceInfo.textContent = `ID устройства: ${deviceId.substring(0, 10)}...`;
         }
         
         // Проверка поддержки камеры
@@ -277,23 +486,25 @@
             return true;
         }
         
-        // Загрузка сохраненных данных
+        // Загрузка сохраненных данных для текущей операции
         function loadSavedData() {
-            const saved = localStorage.getItem('orto_codes');
+            const saved = localStorage.getItem(`orto_codes_${currentOperation}`);
             if (saved) {
                 try {
                     scannedCodes = JSON.parse(saved);
                     updateUI();
                     showNotification('Загружено: ' + scannedCodes.length + ' кодов');
                 } catch (e) {
-                    console.log('Нет сохраненных данных');
+                    scannedCodes = [];
                 }
+            } else {
+                scannedCodes = [];
             }
         }
         
-        // Сохранение данных
+        // Сохранение данных для текущей операции
         function saveData() {
-            localStorage.setItem('orto_codes', JSON.stringify(scannedCodes));
+            localStorage.setItem(`orto_codes_${currentOperation}`, JSON.stringify(scannedCodes));
         }
         
         // Обновление интерфейса
@@ -461,41 +672,43 @@
             }
         }
         
-        // Очистка списка (БЕЗ ПОДТВЕРЖДЕНИЯ)
+        // Очистка списка
         function clearCodes() {
             if (scannedCodes.length === 0) return;
             
             const count = scannedCodes.length;
             scannedCodes = [];
-            localStorage.removeItem('orto_codes');
+            localStorage.removeItem(`orto_codes_${currentOperation}`);
             updateUI();
             showNotification(`Очищено ${count} кодов`, 'warning');
         }
         
-        // Отправка в Telegram с идентификатором устройства
+        // Отправка в Telegram с типом операции
         async function sendToTelegram() {
-            if (scannedCodes.length === 0) return;
+            if (scannedCodes.length === 0 || !currentOperation) return;
             
             const token = '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og';
             const chatId = '2132584938';
             
             // Получаем информацию об устройстве
             const deviceInfo = await getDeviceInfo();
+            const operation = OPERATIONS[currentOperation];
             
-            // Формируем сообщение с идентификатором устройства
-            let message = `🦷 *Orto Инвентаризация*\n`;
+            // Формируем сообщение с типом операции
+            let message = `${operation.emoji} *${operation.name}*\n`;
             message += `📅 Дата: ${new Date().toLocaleString('ru-RU')}\n`;
-            message += `📦 Количество: ${scannedCodes.length}\n`;
+            message += `📦 Количество кодов: ${scannedCodes.length}\n`;
+            message += `🔧 Тип операции: ${operation.name}\n`;
             message += `📱 ID устройства: \`${deviceId}\`\n`;
-            message += `🔧 Платформа: ${deviceInfo.platform}\n`;
-            message += `🌐 Язык: ${deviceInfo.language}\n`;
-            message += `🕐 Часовой пояс: ${deviceInfo.timezone}\n`;
-            message += `📏 Разрешение: ${deviceInfo.screenResolution}\n\n`;
+            message += `🌐 Платформа: ${deviceInfo.platform}\n`;
+            message += `🕐 Время отправки: ${deviceInfo.timestamp}\n\n`;
             message += `*Список кодов:*\n`;
             
             scannedCodes.forEach((code, index) => {
                 message += `${index + 1}. \`${code}\`\n`;
             });
+            
+            message += `\n✅ *Итого:* ${scannedCodes.length} шт.`;
             
             // Отправляем
             try {
@@ -533,42 +746,28 @@
         async function init() {
             // Генерируем ID устройства
             deviceId = generateDeviceId();
-            updateDeviceInfo();
+            elements.deviceIdPreview.textContent = deviceId.substring(0, 10) + '...';
             
-            loadSavedData();
+            // Обработчики главного меню
+            document.querySelectorAll('.menu-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const operation = e.currentTarget.getAttribute('data-operation');
+                    setOperation(operation);
+                    loadSavedData();
+                });
+            });
             
-            // События
+            // Обработчики страницы сканера
             elements.startBtn.addEventListener('click', startScanner);
             elements.stopBtn.addEventListener('click', stopScanner);
             elements.clearBtn.addEventListener('click', clearCodes);
             elements.sendBtn.addEventListener('click', sendToTelegram);
+            elements.backBtn.addEventListener('click', () => showPage('main'));
             
+            // Проверяем поддержку камеры
             if (!checkCameraSupport()) {
                 return;
             }
-            
-            // Автостарт через 2 секунды
-            setTimeout(() => {
-                if (!isScanning) {
-                    startScanner();
-                }
-            }, 2000);
-            
-            // Горячие клавиши
-            document.addEventListener('keydown', (e) => {
-                if (e.code === 'Space') {
-                    e.preventDefault();
-                    if (isScanning) {
-                        stopScanner();
-                    } else {
-                        startScanner();
-                    }
-                }
-                
-                if (e.code === 'Delete' && !elements.clearBtn.disabled) {
-                    clearCodes();
-                }
-            });
             
             console.log('Orto Scanner готов. ID устройства:', deviceId);
         }
