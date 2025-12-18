@@ -34,23 +34,37 @@
             padding-top: 20px;
         }
         
-        .logo {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: #4a6fa5;
+        .logo-container {
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        
+        .orto-logo {
+            height: 50px;
+            width: auto;
+            max-width: 180px;
+            object-fit: contain;
         }
         
         h1 {
             font-size: 24px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #0056a3;
             margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
         
         .subtitle {
             font-size: 14px;
-            color: #7f8c8d;
+            color: #666;
             margin-bottom: 5px;
+        }
+        
+        .tagline {
+            font-size: 13px;
+            color: #888;
+            font-weight: 400;
+            margin-top: 5px;
         }
         
         /* Область сканера */
@@ -92,14 +106,14 @@
         }
         
         .btn-primary {
-            background: #4a6fa5;
+            background: #0056a3;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #3a5a8c;
+            background: #004080;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 86, 163, 0.25);
         }
         
         .btn-secondary {
@@ -113,24 +127,24 @@
         }
         
         .btn-danger {
-            background: #e74c3c;
+            background: #d9534f;
             color: white;
         }
         
         .btn-danger:hover {
-            background: #c0392b;
+            background: #c9302c;
             transform: translateY(-2px);
         }
         
         .btn-success {
-            background: #27ae60;
+            background: #28a745;
             color: white;
         }
         
         .btn-success:hover {
-            background: #219653;
+            background: #218838;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.25);
         }
         
         .btn:disabled {
@@ -157,11 +171,11 @@
         .section-title h2 {
             font-size: 18px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #333;
         }
         
         .counter {
-            background: #4a6fa5;
+            background: #0056a3;
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
@@ -191,7 +205,7 @@
             margin-bottom: 10px;
             background: #f8f9fa;
             border-radius: 10px;
-            border-left: 4px solid #4a6fa5;
+            border-left: 4px solid #0056a3;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -226,17 +240,7 @@
         
         .status-new {
             background: #e8f4fd;
-            color: #3498db;
-        }
-        
-        .status-duplicate {
-            background: #fef5e7;
-            color: #f39c12;
-        }
-        
-        .status-invalid {
-            background: #fdedec;
-            color: #e74c3c;
+            color: #0056a3;
         }
         
         /* Панель отправки */
@@ -259,13 +263,13 @@
         .send-title {
             font-size: 18px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #333;
         }
         
         .send-count {
             font-size: 24px;
             font-weight: 700;
-            color: #4a6fa5;
+            color: #0056a3;
         }
         
         /* Уведомления */
@@ -294,21 +298,21 @@
         }
         
         .notification-success {
-            background: #27ae60;
+            background: #28a745;
             color: white;
-            border-left: 4px solid #219653;
+            border-left: 4px solid #218838;
         }
         
         .notification-error {
-            background: #e74c3c;
+            background: #d9534f;
             color: white;
-            border-left: 4px solid #c0392b;
+            border-left: 4px solid #c9302c;
         }
         
         .notification-warning {
-            background: #f39c12;
+            background: #f0ad4e;
             color: white;
-            border-left: 4px solid #d68910;
+            border-left: 4px solid #ec971f;
         }
         
         /* Настройки Telegram */
@@ -321,7 +325,7 @@
         .settings-toggle {
             background: none;
             border: none;
-            color: #4a6fa5;
+            color: #0056a3;
             font-size: 14px;
             cursor: pointer;
             display: flex;
@@ -365,8 +369,8 @@
         
         .input-group input:focus {
             outline: none;
-            border-color: #4a6fa5;
-            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+            border-color: #0056a3;
+            box-shadow: 0 0 0 3px rgba(0, 86, 163, 0.1);
         }
         
         /* Мобильная адаптация */
@@ -396,6 +400,10 @@
                 right: 20px;
                 max-width: none;
             }
+            
+            .orto-logo {
+                height: 45px;
+            }
         }
         
         /* Анимации */
@@ -404,9 +412,9 @@
         }
         
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(74, 111, 165, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(0, 86, 163, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 86, 163, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 86, 163, 0); }
         }
         
         /* Скроллбар */
@@ -431,12 +439,17 @@
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
+        <!-- Шапка с логотипом Orto -->
         <div class="header">
-            <div class="logo">🦷</div>
-            <h1>Orto Scanner</h1>
+            <div class="logo-container">
+                <img src="orto.jpg" 
+                     alt="Orto" 
+                     class="orto-logo"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T1JUTzwvdGV4dD48L3N2Zz4='">
+            </div>
+            <h1>Сканер инвентаризации</h1>
             <p class="subtitle">Сканируйте Orto QR-коды</p>
-            <p class="subtitle">Отправка по кнопке</p>
+            <p class="tagline">Отправка по готовности</p>
         </div>
         
         <!-- Сканер -->
@@ -444,7 +457,7 @@
             <div id="reader"></div>
             
             <div class="controls">
-                <button class="btn btn-primary" id="startBtn">
+                <button class="btn btn-primary pulse" id="startBtn">
                     <span>▶</span>
                     <span>Начать сканирование</span>
                 </button>
