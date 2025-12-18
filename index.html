@@ -3,449 +3,577 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📱 Сканер Orto инвентаризации</title>
+    <title>Orto Scanner</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            min-height: 100vh;
-            padding: 20px;
+        /* Сброс и базовые стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
         .container {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
             max-width: 500px;
             margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 20px;
         }
+        
+        /* Шапка */
         .header {
             text-align: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #4a6fa5;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        /* Область сканера */
+        .scanner-section {
+            margin-bottom: 30px;
+        }
+        
+        #reader {
+            width: 100%;
+            height: 280px;
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            border: 2px solid #e8ecef;
+        }
+        
+        /* Кнопки управления */
+        .controls {
+            display: flex;
+            gap: 12px;
             margin-bottom: 25px;
         }
-        .logo {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        h1 { 
-            color: #333; 
-            margin-bottom: 5px;
-            font-size: 22px;
-        }
-        .subtitle { 
-            color: #666; 
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .filter-info {
-            background: #fff3cd;
-            border: 1px solid #ffecb5;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #856404;
-            font-weight: bold;
-        }
-        .filter-info .prefix {
-            background: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-family: monospace;
-        }
-        #reader { 
-            width: 100%; 
-            height: 300px; 
-            border: 3px solid #ddd; 
-            border-radius: 10px;
-            background: #f8f9fa;
-        }
-        .buttons { 
-            display: flex; 
-            gap: 10px; 
-            margin: 20px 0; 
-        }
-        button { 
-            flex: 1; 
-            padding: 16px; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            cursor: pointer;
+        
+        .btn {
+            flex: 1;
+            padding: 16px 20px;
             border: none;
-            font-weight: bold;
-            transition: all 0.3s;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-        #startBtn { 
-            background: #28a745; 
-            color: white; 
-        }
-        #startBtn:hover { background: #218838; }
-        #stopBtn { 
-            background: #dc3545; 
-            color: white; 
-        }
-        #stopBtn:hover { background: #c82333; }
-        #historyBtn {
-            background: #6c757d;
+        
+        .btn-primary {
+            background: #4a6fa5;
             color: white;
         }
-        #historyBtn:hover { background: #5a6268; }
-        .scan-result {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            display: none;
+        
+        .btn-primary:hover {
+            background: #3a5a8c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 111, 165, 0.25);
         }
-        .result-header {
+        
+        .btn-secondary {
+            background: #e8ecef;
+            color: #5d6d7e;
+        }
+        
+        .btn-secondary:hover {
+            background: #d5dbe0;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Список отсканированных кодов */
+        .codes-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e8ecef;
         }
-        .status-badge {
-            padding: 5px 12px;
+        
+        .section-title h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .counter {
+            background: #4a6fa5;
+            color: white;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 14px;
+            font-weight: 600;
         }
-        .status-valid {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-invalid {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        #resultText {
-            font-family: monospace;
-            font-size: 16px;
+        
+        .codes-list {
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            word-break: break-all;
-            margin-bottom: 15px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e8ecef;
         }
-        .qr-preview {
+        
+        .empty-state {
             text-align: center;
-            margin: 15px 0;
+            color: #95a5a6;
+            padding: 40px 20px;
+            font-size: 15px;
         }
-        .qr-preview img {
-            width: 120px;
-            height: 120px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            padding: 10px;
+        
+        .code-item {
+            padding: 14px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4a6fa5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
         }
-        .status-message { 
-            padding: 15px; 
-            border-radius: 10px; 
-            margin: 10px 0; 
-            display: none; 
-            text-align: center;
-            font-weight: bold;
-            animation: fadeIn 0.3s;
-        }
+        
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .success { 
-            background: #d4edda; 
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error { 
-            background: #f8d7da; 
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .warning { 
-            background: #fff3cd; 
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #007bff;
-        }
-        .stat-label {
-            color: #6c757d;
-            font-size: 12px;
-        }
-        .instructions {
-            background: #e7f5ff;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            font-size: 14px;
-        }
-        .instructions ul {
-            padding-left: 20px;
-            margin: 10px 0;
-        }
-        .instructions li {
-            margin: 5px 0;
-        }
-        .test-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .test-buttons button {
-            flex: 1;
-            padding: 10px;
-            font-size: 14px;
-        }
-        .valid-test { background: #28a745; }
-        .invalid-test { background: #dc3545; }
         
-        /* Модальное окно истории */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
+        .code-item:last-child {
+            margin-bottom: 0;
         }
-        .modal-content {
+        
+        .code-text {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 15px;
+            color: #2c3e50;
+            word-break: break-all;
+            flex: 1;
+        }
+        
+        .code-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 12px;
+            white-space: nowrap;
+        }
+        
+        .status-new {
+            background: #e8f4fd;
+            color: #3498db;
+        }
+        
+        .status-duplicate {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+        
+        .status-invalid {
+            background: #fdedec;
+            color: #e74c3c;
+        }
+        
+        /* Панель отправки */
+        .send-section {
             background: white;
-            border-radius: 15px;
+            border-radius: 16px;
             padding: 25px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-top: 30px;
+            border: 1px solid #e8ecef;
         }
-        .modal-header {
+        
+        .send-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-        }
-        .history-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .history-item {
-            padding: 12px;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        .history-code {
-            font-family: monospace;
-            font-size: 14px;
-        }
-        .history-time {
-            font-size: 12px;
-            color: #6c757d;
+        
+        .send-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
         }
         
+        .send-count {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4a6fa5;
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            max-width: 350px;
+            display: none;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .notification-success {
+            background: #27ae60;
+            color: white;
+            border-left: 4px solid #219653;
+        }
+        
+        .notification-error {
+            background: #e74c3c;
+            color: white;
+            border-left: 4px solid #c0392b;
+        }
+        
+        .notification-warning {
+            background: #f39c12;
+            color: white;
+            border-left: 4px solid #d68910;
+        }
+        
+        /* Настройки Telegram */
+        .settings {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e8ecef;
+        }
+        
+        .settings-toggle {
+            background: none;
+            border: none;
+            color: #4a6fa5;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .settings-content {
+            display: none;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-content.show {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: #5d6d7e;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d5dbe0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #4a6fa5;
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+        }
+        
+        /* Мобильная адаптация */
         @media (max-width: 600px) {
-            .container { padding: 15px; }
-            #reader { height: 250px; }
-            .buttons { flex-direction: column; }
-            button { width: 100%; }
+            .container {
+                padding: 15px;
+            }
+            
+            #reader {
+                height: 240px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .codes-list {
+                max-height: 250px;
+            }
+            
+            .notification {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
+        }
+        
+        /* Анимации */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(74, 111, 165, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 111, 165, 0); }
+        }
+        
+        /* Скроллбар */
+        .codes-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .codes-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .codes-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        .codes-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Заголовок -->
+        <!-- Шапка -->
         <div class="header">
             <div class="logo">🦷</div>
-            <h1>Сканер Orto инвентаризации</h1>
-            <p class="subtitle">Сканируйте только QR-коды начинающиеся с "orto"</p>
+            <h1>Orto Scanner</h1>
+            <p class="subtitle">Сканируйте Orto QR-коды</p>
+            <p class="subtitle">Отправка по кнопке</p>
         </div>
         
-        <!-- Информация о фильтре -->
-        <div class="filter-info">
-            🔍 Сканер принимает только коды с префиксом: 
-            <span class="prefix">orto</span>
-            <div style="font-size: 12px; margin-top: 5px; font-weight: normal;">
-                Пример: orto-12345, orto-chair-001, ortodesk-2024
-            </div>
-        </div>
-        
-        <!-- Область сканирования -->
-        <div id="reader"></div>
-        
-        <!-- Кнопки управления -->
-        <div class="buttons">
-            <button id="startBtn">
-                <span>▶</span>
-                <span>Начать сканирование</span>
-            </button>
-            <button id="stopBtn" style="display:none;">
-                <span>⏹</span>
-                <span>Остановить</span>
-            </button>
-            <button id="historyBtn" onclick="showHistory()">
-                <span>📋</span>
-                <span>История</span>
-            </button>
-        </div>
-        
-        <!-- Результат сканирования -->
-        <div class="scan-result" id="scanResult">
-            <div class="result-header">
-                <h3>Результат сканирования:</h3>
-                <div class="status-badge" id="statusBadge"></div>
-            </div>
-            <div id="resultText"></div>
-            <div class="qr-preview" id="qrPreview"></div>
-        </div>
-        
-        <!-- Статус -->
-        <div class="status-message" id="statusMessage"></div>
-        
-        <!-- Инструкция -->
-        <div class="instructions">
-            <p><strong>Как использовать:</strong></p>
-            <ul>
-                <li>Нажмите "Начать сканирование"</li>
-                <li>Разрешите доступ к камере</li>
-                <li>Наведите камеру на QR-код Orto</li>
-                <li>Система проверит код и отправит в Telegram</li>
-                <li>Невалидные коды игнорируются</li>
-            </ul>
+        <!-- Сканер -->
+        <div class="scanner-section">
+            <div id="reader"></div>
             
-            <div class="test-buttons">
-                <button class="valid-test" onclick="testValidCode()">
-                    Тест валидного кода (orto-001)
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn">
+                    <span>▶</span>
+                    <span>Начать сканирование</span>
                 </button>
-                <button class="invalid-test" onclick="testInvalidCode()">
-                    Тест невалидного кода (other-001)
+                <button class="btn btn-secondary" id="stopBtn" style="display: none;">
+                    <span>⏹</span>
+                    <span>Пауза</span>
+                </button>
+                <button class="btn btn-danger" id="clearBtn" disabled>
+                    <span>🗑️</span>
+                    <span>Очистить</span>
                 </button>
             </div>
         </div>
         
-        <!-- Статистика -->
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value" id="totalScans">0</div>
-                <div class="stat-label">Всего сканов</div>
+        <!-- Список кодов -->
+        <div class="codes-section">
+            <div class="section-title">
+                <h2>Отсканированные коды</h2>
+                <div class="counter" id="counter">0</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-value" id="validScans">0</div>
-                <div class="stat-label">Валидных</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="rejectedScans">0</div>
-                <div class="stat-label">Отклонено</div>
+            
+            <div class="codes-list" id="codesList">
+                <div class="empty-state" id="emptyState">
+                    Нет отсканированных кодов.<br>
+                    Начните сканирование.
+                </div>
             </div>
         </div>
         
-        <!-- Ссылка на настройки -->
-        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
-            <p>Для настройки Telegram введите данные в поле ниже:</p>
-            <input type="text" id="telegramToken" placeholder="Токен бота" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
-            <input type="text" id="telegramChatId" placeholder="Chat ID" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
-            <button onclick="saveTelegramConfig()" style="background: #17a2b8; color: white; width: 100%; margin-top: 10px;">Сохранить настройки Telegram</button>
+        <!-- Панель отправки -->
+        <div class="send-section">
+            <div class="send-header">
+                <div class="send-title">Готово к отправке</div>
+                <div class="send-count" id="sendCount">0</div>
+            </div>
+            
+            <button class="btn btn-success" id="sendBtn" disabled style="width: 100%;">
+                <span>📤</span>
+                <span>Отправить в Telegram</span>
+            </button>
+            
+            <!-- Настройки Telegram -->
+            <div class="settings">
+                <button class="settings-toggle" id="settingsToggle">
+                    <span>⚙️</span>
+                    <span>Настройки Telegram</span>
+                </button>
+                
+                <div class="settings-content" id="settingsContent">
+                    <div class="input-group">
+                        <label for="telegramToken">Токен бота</label>
+                        <input type="text" id="telegramToken" placeholder="123456:ABC-DEF..." 
+                               value="7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="telegramChatId">Chat ID</label>
+                        <input type="text" id="telegramChatId" placeholder="123456789" 
+                               value="544081544">
+                    </div>
+                    
+                    <button class="btn btn-primary" id="saveSettings" style="width: 100%;">
+                        Сохранить настройки
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Модальное окно истории -->
-    <div class="modal" id="historyModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📋 История сканирования</h3>
-                <button class="close-modal" onclick="hideHistory()">×</button>
-            </div>
-            <div class="history-list" id="historyList"></div>
-            <button onclick="clearHistory()" style="background: #dc3545; color: white; width: 100%; margin-top: 15px;">Очистить историю</button>
-            <button onclick="exportHistory()" style="background: #28a745; color: white; width: 100%; margin-top: 10px;">📥 Экспорт в CSV</button>
-        </div>
-    </div>
+    <!-- Уведомления -->
+    <div class="notification" id="notification"></div>
 
     <script>
         // ========== КОНФИГУРАЦИЯ ==========
-        const ORTO_PREFIX = "orto"; // Код должен начинаться с этой строки
-        const ORTO_PREFIX_LENGTH = 4; // Длина "orto"
+        const ORTO_PREFIX = "orto";
         
-        // Настройки Telegram (будут сохранены в localStorage)
+        // Настройки Telegram
         let telegramConfig = {
-            token: localStorage.getItem('telegram_token') || '',
-            chatId: localStorage.getItem('telegram_chat_id') || ''
+            token: localStorage.getItem('telegram_token') || '7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE',
+            chatId: localStorage.getItem('telegram_chat_id') || '544081544'
         };
         
-        // ========== ПЕРЕМЕННЫЕ ==========
+        // ========== СОСТОЯНИЕ ==========
         let scanner = null;
-        let scanHistory = JSON.parse(localStorage.getItem('scan_history') || '[]');
-        let stats = JSON.parse(localStorage.getItem('scan_stats') || '{"total":0,"valid":0,"rejected":0}');
+        let scannedCodes = []; // Массив уникальных кодов
+        let lastScannedCode = ''; // Последний отсканированный код
         
-        // ========== ЭЛЕМЕНТЫ СТРАНИЦЫ ==========
+        // ========== ЭЛЕМЕНТЫ ==========
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const scanResult = document.getElementById('scanResult');
-        const resultText = document.getElementById('resultText');
-        const statusBadge = document.getElementById('statusBadge');
-        const statusMessage = document.getElementById('statusMessage');
-        const qrPreview = document.getElementById('qrPreview');
+        const clearBtn = document.getElementById('clearBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const codesList = document.getElementById('codesList');
+        const emptyState = document.getElementById('emptyState');
+        const counter = document.getElementById('counter');
+        const sendCount = document.getElementById('sendCount');
+        const notification = document.getElementById('notification');
         
-        // Статистика
-        const totalScansEl = document.getElementById('totalScans');
-        const validScansEl = document.getElementById('validScans');
-        const rejectedScansEl = document.getElementById('rejectedScans');
-        
-        // Telegram настройки
+        // Настройки
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsContent = document.getElementById('settingsContent');
         const telegramTokenInput = document.getElementById('telegramToken');
         const telegramChatIdInput = document.getElementById('telegramChatId');
+        const saveSettingsBtn = document.getElementById('saveSettings');
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
         function init() {
-            // Загружаем историю и статистику
-            updateStats();
-            
-            // Загружаем настройки Telegram
-            if (telegramConfig.token) {
-                telegramTokenInput.value = telegramConfig.token;
-                telegramChatIdInput.value = telegramConfig.chatId;
+            // Загружаем сохранённые коды
+            const savedCodes = localStorage.getItem('scanned_codes');
+            if (savedCodes) {
+                scannedCodes = JSON.parse(savedCodes);
+                updateCodeList();
+                updateCounters();
             }
+            
+            // Загружаем настройки
+            telegramTokenInput.value = telegramConfig.token;
+            telegramChatIdInput.value = telegramConfig.chatId;
             
             // Привязка событий
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
+            clearBtn.addEventListener('click', clearCodes);
+            sendBtn.addEventListener('click', sendToTelegram);
+            settingsToggle.addEventListener('click', toggleSettings);
+            saveSettingsBtn.addEventListener('click', saveSettings);
             
-            console.log('Сканер инициализирован. Префикс для проверки:', ORTO_PREFIX);
+            // Проверяем настройки Telegram
+            checkTelegramConfig();
         }
         
         // ========== СКАНЕР ==========
@@ -453,26 +581,23 @@
             try {
                 scanner = new Html5Qrcode("reader");
                 
-                const config = { 
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
-                };
-                
                 await scanner.start(
                     { facingMode: "environment" },
-                    config,
+                    { 
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 }
+                    },
                     onScanSuccess,
                     onScanError
                 );
                 
-                // Переключение кнопок
+                // Обновляем UI
                 startBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-                
-                showStatus("📷 Сканирование запущено. Ищем QR-коды Orto...", "warning");
+                stopBtn.style.display = 'flex';
+                startBtn.classList.remove('pulse');
                 
             } catch (error) {
-                showStatus("❌ Ошибка: " + error.message, "error");
+                showNotification('❌ Ошибка доступа к камере', 'error');
             }
         }
         
@@ -480,209 +605,205 @@
             if (scanner) {
                 try {
                     await scanner.stop();
-                    startBtn.style.display = 'block';
+                    
+                    // Обновляем UI
+                    startBtn.style.display = 'flex';
                     stopBtn.style.display = 'none';
-                    showStatus("Сканирование остановлено", "error");
+                    startBtn.classList.add('pulse');
+                    
                 } catch (error) {
-                    console.error("Ошибка остановки:", error);
+                    console.error('Ошибка остановки:', error);
                 }
             }
         }
         
-        // ========== ПРОВЕРКА И ОБРАБОТКА QR-КОДА ==========
+        // ========== ОБРАБОТКА QR-КОДА ==========
         async function onScanSuccess(decodedText) {
             // Временно останавливаем сканер
             if (scanner) {
                 await scanner.pause();
             }
             
-            // Показываем результат
-            resultText.textContent = decodedText;
-            scanResult.style.display = 'block';
+            const code = decodedText.trim();
+            const isOrtoCode = checkOrtoPrefix(code);
             
             // Проверяем префикс
-            const isOrtoCode = checkOrtoPrefix(decodedText);
-            
-            // Обновляем статистику
-            stats.total++;
-            
-            if (isOrtoCode) {
-                // ВАЛИДНЫЙ код Orto
-                stats.valid++;
-                statusBadge.textContent = "✅ ВАЛИДНЫЙ";
-                statusBadge.className = "status-badge status-valid";
-                
-                // Добавляем в историю
-                addToHistory(decodedText, true);
-                
-                // Показываем успешное сообщение
-                showStatus(`✅ Принят код Orto: ${decodedText}`, "success");
-                
-                // Отправляем в Telegram если настроено
-                if (telegramConfig.token && telegramConfig.chatId) {
-                    await sendToTelegram(decodedText);
-                }
-                
-                // Создаем предпросмотр QR
-                createQRPreview(decodedText);
-                
-            } else {
-                // НЕВАЛИДНЫЙ код
-                stats.rejected++;
-                statusBadge.textContent = "❌ НЕВАЛИДНЫЙ";
-                statusBadge.className = "status-badge status-invalid";
-                
-                // Добавляем в историю как отклоненный
-                addToHistory(decodedText, false);
-                
-                // Показываем сообщение об ошибке
-                showStatus(`❌ Код отклонен. Должен начинаться с "${ORTO_PREFIX}"`, "error");
-                
-                // Очищаем превью
-                qrPreview.innerHTML = '';
+            if (!isOrtoCode) {
+                showNotification(`❌ Код "${code}" не начинается с "orto"`, 'warning');
+                resumeScanner();
+                return;
             }
             
-            // Обновляем статистику на экране и в хранилище
-            updateStats();
-            localStorage.setItem('scan_stats', JSON.stringify(stats));
+            // Проверяем дубликат
+            if (scannedCodes.includes(code)) {
+                showNotification(`⚠️ Код "${code}" уже был отсканирован`, 'warning');
+                resumeScanner();
+                return;
+            }
             
-            // Возобновляем сканирование через 3 секунды
-            setTimeout(async () => {
-                if (scanner) {
-                    await scanner.resume();
-                    
-                    // Плавно скрываем результаты
-                    scanResult.style.display = 'none';
-                    statusMessage.style.display = 'none';
-                }
-            }, 3000);
+            // Проверяем повтор подряд
+            if (code === lastScannedCode) {
+                showNotification(`⚠️ Тот же код "${code}" сканируется повторно`, 'warning');
+                resumeScanner();
+                return;
+            }
+            
+            // Сохраняем последний код
+            lastScannedCode = code;
+            
+            // Добавляем новый код
+            scannedCodes.push(code);
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('scanned_codes', JSON.stringify(scannedCodes));
+            
+            // Обновляем UI
+            updateCodeList();
+            updateCounters();
+            
+            // Показываем уведомление
+            showNotification(`✅ Добавлен: ${code}`, 'success');
+            
+            // Возобновляем сканирование
+            resumeScanner();
         }
         
         function onScanError(error) {
-            // Игнорируем некоторые ошибки
+            // Игнорируем
         }
         
-        // ========== ПРОВЕРКА ПРЕФИКСА "orto" ==========
+        function resumeScanner() {
+            setTimeout(async () => {
+                if (scanner) {
+                    await scanner.resume();
+                }
+            }, 1000);
+        }
+        
+        // ========== ПРОВЕРКА ПРЕФИКСА ==========
         function checkOrtoPrefix(code) {
-            // Приводим к нижнему регистру для проверки
-            const lowerCode = code.toLowerCase().trim();
-            
-            // Проверяем несколько вариантов:
-            // 1. Начинается строго с "orto"
-            // 2. Или содержит "orto" как часть в начале (с дефисом/подчеркиванием)
-            
-            // Вариант 1: Строго начинается с "orto"
-            if (lowerCode.startsWith(ORTO_PREFIX)) {
-                return true;
-            }
-            
-            // Вариант 2: Проверяем первые 4-5 символов
-            const firstPart = lowerCode.substring(0, ORTO_PREFIX_LENGTH + 1);
-            if (firstPart.includes(ORTO_PREFIX)) {
-                return true;
-            }
-            
-            return false;
+            return code.toLowerCase().startsWith(ORTO_PREFIX);
         }
         
-        // ========== РАБОТА С ИСТОРИЕЙ ==========
-        function addToHistory(code, isValid) {
-            const scanRecord = {
-                id: Date.now(),
-                code: code,
-                isValid: isValid,
-                timestamp: new Date().toISOString(),
-                timeDisplay: new Date().toLocaleString('ru-RU')
-            };
-            
-            scanHistory.unshift(scanRecord); // Добавляем в начало
-            if (scanHistory.length > 100) {
-                scanHistory = scanHistory.slice(0, 100); // Ограничиваем историю
+        // ========== УПРАВЛЕНИЕ СПИСКОМ КОДОВ ==========
+        function updateCodeList() {
+            if (scannedCodes.length === 0) {
+                emptyState.style.display = 'block';
+                codesList.innerHTML = '';
+                codesList.appendChild(emptyState);
+                return;
             }
             
-            localStorage.setItem('scan_history', JSON.stringify(scanHistory));
-        }
-        
-        function showHistory() {
-            const modal = document.getElementById('historyModal');
-            const historyList = document.getElementById('historyList');
+            emptyState.style.display = 'none';
             
-            if (scanHistory.length === 0) {
-                historyList.innerHTML = '<p style="text-align: center; color: #666;">История сканирования пуста</p>';
-            } else {
-                let html = '';
-                scanHistory.forEach(record => {
-                    const status = record.isValid ? '✅' : '❌';
-                    html += `
-                        <div class="history-item">
-                            <div>
-                                <div class="history-code">${status} ${record.code}</div>
-                                <div class="history-time">${record.timeDisplay}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                historyList.innerHTML = html;
-            }
-            
-            modal.style.display = 'flex';
-        }
-        
-        function hideHistory() {
-            document.getElementById('historyModal').style.display = 'none';
-        }
-        
-        function clearHistory() {
-            if (confirm('Очистить всю историю сканирования?')) {
-                scanHistory = [];
-                localStorage.setItem('scan_history', JSON.stringify(scanHistory));
-                showHistory();
-            }
-        }
-        
-        function exportHistory() {
-            let csv = 'ID;QR код;Статус;Дата/время\n';
-            scanHistory.forEach(record => {
-                const status = record.isValid ? 'VALID' : 'REJECTED';
-                csv += `${record.id};${record.code};${status};${record.timeDisplay}\n`;
+            // Создаём список кодов
+            let html = '';
+            scannedCodes.forEach((code, index) => {
+                html += `
+                    <div class="code-item">
+                        <div class="code-text">${code}</div>
+                        <div class="code-status status-new">#${index + 1}</div>
+                    </div>
+                `;
             });
             
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `orto_scans_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+            codesList.innerHTML = html;
             
-            showStatus('📥 История экспортирована в CSV', 'success');
+            // Прокручиваем к последнему элементу
+            codesList.scrollTop = codesList.scrollHeight;
         }
         
-        // ========== СТАТИСТИКА ==========
-        function updateStats() {
-            totalScansEl.textContent = stats.total;
-            validScansEl.textContent = stats.valid;
-            rejectedScansEl.textContent = stats.rejected;
+        function updateCounters() {
+            const count = scannedCodes.length;
+            counter.textContent = count;
+            sendCount.textContent = count;
+            
+            // Активируем/деактивируем кнопки
+            clearBtn.disabled = count === 0;
+            sendBtn.disabled = count === 0;
+            
+            if (count > 0) {
+                sendBtn.classList.add('pulse');
+            } else {
+                sendBtn.classList.remove('pulse');
+            }
+        }
+        
+        function clearCodes() {
+            if (scannedCodes.length === 0) return;
+            
+            if (confirm(`Очистить ${scannedCodes.length} отсканированных кодов?`)) {
+                scannedCodes = [];
+                lastScannedCode = '';
+                localStorage.removeItem('scanned_codes');
+                updateCodeList();
+                updateCounters();
+                showNotification('🗑️ Список кодов очищен', 'warning');
+            }
         }
         
         // ========== TELEGRAM ==========
-        function saveTelegramConfig() {
-            const token = telegramTokenInput.value.trim();
-            const chatId = telegramChatIdInput.value.trim();
+        async function sendToTelegram() {
+            if (scannedCodes.length === 0) return;
             
-            if (token && chatId) {
-                telegramConfig.token = token;
-                telegramConfig.chatId = chatId;
+            // Проверяем настройки
+            if (!telegramConfig.token || !telegramConfig.chatId) {
+                showNotification('❌ Настройте Telegram в настройках', 'error');
+                settingsContent.classList.add('show');
+                return;
+            }
+            
+            // Деактивируем кнопку
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span>⏳</span><span>Отправка...</span>';
+            
+            try {
+                // Формируем сообщение
+                const message = createTelegramMessage(scannedCodes);
                 
-                localStorage.setItem('telegram_token', token);
-                localStorage.setItem('telegram_chat_id', chatId);
+                // Отправляем
+                const success = await sendTelegramMessage(message);
                 
-                showStatus('✅ Настройки Telegram сохранены', 'success');
-            } else {
-                showStatus('⚠️ Заполните оба поля', 'warning');
+                if (success) {
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success');
+                    
+                    // Очищаем список после успешной отправки
+                    scannedCodes = [];
+                    lastScannedCode = '';
+                    localStorage.removeItem('scanned_codes');
+                    updateCodeList();
+                    updateCounters();
+                    
+                } else {
+                    showNotification('❌ Ошибка отправки', 'error');
+                }
+                
+            } catch (error) {
+                showNotification('❌ Ошибка сети', 'error');
+                console.error('Ошибка отправки:', error);
+                
+            } finally {
+                // Восстанавливаем кнопку
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<span>📤</span><span>Отправить в Telegram</span>';
             }
         }
         
-        async function sendToTelegram(qrData) {
+        function createTelegramMessage(codes) {
+            const timestamp = new Date().toLocaleString('ru-RU');
+            let message = `🦷 *Orto Инвентаризация*\n`;
+            message += `📅 ${timestamp}\n`;
+            message += `📦 Количество: ${codes.length}\n\n`;
+            message += `*Список кодов:*\n`;
+            
+            codes.forEach((code, index) => {
+                message += `${index + 1}. \`${code}\`\n`;
+            });
+            
+            return message;
+        }
+        
+        async function sendTelegramMessage(message) {
             try {
                 const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
                 
@@ -693,80 +814,67 @@
                     },
                     body: JSON.stringify({
                         chat_id: telegramConfig.chatId,
-                        text: `🦷 Orto Scan\n✅ Код: ${qrData}\n🕐 Время: ${new Date().toLocaleString('ru-RU')}\n📱 Устройство: Мобильный сканер`,
-                        parse_mode: 'HTML'
+                        text: message,
+                        parse_mode: 'Markdown'
                     })
                 });
                 
-                if (response.ok) {
-                    console.log('Отправлено в Telegram:', qrData);
-                    return true;
-                } else {
-                    console.error('Ошибка Telegram API:', await response.text());
-                    return false;
-                }
+                return response.ok;
                 
             } catch (error) {
-                console.error('Ошибка отправки в Telegram:', error);
-                return false;
+                throw error;
             }
         }
         
-        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-        function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = `status-message ${type}`;
-            statusMessage.style.display = 'block';
+        // ========== НАСТРОЙКИ ==========
+        function toggleSettings() {
+            settingsContent.classList.toggle('show');
+        }
+        
+        function saveSettings() {
+            const token = telegramTokenInput.value.trim();
+            const chatId = telegramChatIdInput.value.trim();
             
-            // Автоскрытие для информационных сообщений
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusMessage.style.display = 'none';
-                }, 5000);
+            if (!token || !chatId) {
+                showNotification('❌ Заполните оба поля', 'error');
+                return;
+            }
+            
+            telegramConfig.token = token;
+            telegramConfig.chatId = chatId;
+            
+            localStorage.setItem('telegram_token', token);
+            localStorage.setItem('telegram_chat_id', chatId);
+            
+            showNotification('✅ Настройки сохранены', 'success');
+            checkTelegramConfig();
+            
+            // Скрываем настройки
+            setTimeout(() => {
+                settingsContent.classList.remove('show');
+            }, 1500);
+        }
+        
+        function checkTelegramConfig() {
+            if (telegramConfig.token && telegramConfig.chatId) {
+                console.log('Telegram настроен');
             }
         }
         
-        function createQRPreview(text) {
-            // Создаем миниатюру QR кода для отображения
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`;
-            qrPreview.innerHTML = `<img src="${qrUrl}" alt="QR Preview">`;
+        // ========== УВЕДОМЛЕНИЯ ==========
+        function showNotification(text, type) {
+            notification.textContent = text;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
+            
+            // Автоскрытие
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
         }
         
-        // ========== ТЕСТОВЫЕ ФУНКЦИИ ==========
-        function testValidCode() {
-            const testCodes = [
-                'orto-001',
-                'ORTO-CHAIR-2024',
-                'ortodesk-15',
-                'orto_stool_blue',
-                'OrtoMonitor-27inch'
-            ];
-            const randomCode = testCodes[Math.floor(Math.random() * testCodes.length)];
-            onScanSuccess(randomCode);
-        }
-        
-        function testInvalidCode() {
-            const testCodes = [
-                'office-001',
-                'chair-15',
-                'desk_black',
-                'monitor-samsung',
-                'other-product'
-            ];
-            const randomCode = testCodes[Math.floor(Math.random() * testCodes.length)];
-            onScanSuccess(randomCode);
-        }
-        
-        // ========== ЗАПУСК ПРИЛОЖЕНИЯ ==========
+        // ========== ЗАПУСК ==========
         document.addEventListener('DOMContentLoaded', init);
-        
-        // Закрытие модального окна при клике вне его
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('historyModal');
-            if (event.target === modal) {
-                hideHistory();
-            }
-        });
     </script>
 </body>
 </html>
