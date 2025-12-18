@@ -6,7 +6,6 @@
     <title>Orto Scanner</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* Сброс и базовые стили */
         * {
             margin: 0;
             padding: 0;
@@ -27,7 +26,6 @@
             padding: 20px;
         }
         
-        /* Шапка */
         .header {
             text-align: center;
             margin-bottom: 30px;
@@ -67,7 +65,6 @@
             margin-top: 5px;
         }
         
-        /* Информация об устройстве */
         .device-info {
             background: white;
             border-radius: 12px;
@@ -90,7 +87,6 @@
             border: 1px dashed #c1d7f0;
         }
         
-        /* Область сканера */
         .scanner-section {
             margin-bottom: 30px;
         }
@@ -106,7 +102,6 @@
             border: 2px solid #e8ecef;
         }
         
-        /* Кнопки управления */
         .controls {
             display: flex;
             gap: 12px;
@@ -177,7 +172,6 @@
             box-shadow: none !important;
         }
         
-        /* Список отсканированных кодов */
         .codes-section {
             margin-bottom: 30px;
         }
@@ -266,7 +260,6 @@
             color: #0056a3;
         }
         
-        /* Панель отправки */
         .send-section {
             background: white;
             border-radius: 16px;
@@ -295,7 +288,6 @@
             color: #0056a3;
         }
         
-        /* Уведомления */
         .notification {
             position: fixed;
             top: 20px;
@@ -338,7 +330,6 @@
             border-left: 4px solid #ec971f;
         }
         
-        /* Настройки Telegram */
         .settings {
             margin-top: 25px;
             padding-top: 25px;
@@ -396,7 +387,6 @@
             box-shadow: 0 0 0 3px rgba(0, 86, 163, 0.1);
         }
         
-        /* Мобильная адаптация */
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -429,7 +419,6 @@
             }
         }
         
-        /* Анимации */
         .pulse {
             animation: pulse 2s infinite;
         }
@@ -440,7 +429,6 @@
             100% { box-shadow: 0 0 0 0 rgba(0, 86, 163, 0); }
         }
         
-        /* Скроллбар */
         .codes-list::-webkit-scrollbar {
             width: 6px;
         }
@@ -458,11 +446,28 @@
         .codes-list::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+        
+        .test-button {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .test-btn {
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка с логотипом Orto -->
         <div class="header">
             <div class="logo-container">
                 <img src="orto.jpg" 
@@ -474,7 +479,6 @@
             <p class="subtitle">Сканируйте Orto QR-коды</p>
             <p class="tagline">Отправка по готовности</p>
             
-            <!-- Информация об устройстве -->
             <div class="device-info">
                 <div>ID устройства:</div>
                 <div class="device-id" id="deviceId">Загрузка...</div>
@@ -484,7 +488,6 @@
             </div>
         </div>
         
-        <!-- Сканер -->
         <div class="scanner-section">
             <div id="reader"></div>
             
@@ -504,7 +507,6 @@
             </div>
         </div>
         
-        <!-- Список кодов -->
         <div class="codes-section">
             <div class="section-title">
                 <h2>Отсканированные коды</h2>
@@ -519,7 +521,6 @@
             </div>
         </div>
         
-        <!-- Панель отправки -->
         <div class="send-section">
             <div class="send-header">
                 <div class="send-title">Готово к отправке</div>
@@ -531,7 +532,13 @@
                 <span>Отправить в Telegram</span>
             </button>
             
-            <!-- Настройки Telegram -->
+            <div class="test-button">
+                <button class="test-btn" onclick="testTelegramConnection()">
+                    <span>🔧</span>
+                    <span>Тест подключения к Telegram</span>
+                </button>
+            </div>
+            
             <div class="settings">
                 <button class="settings-toggle" id="settingsToggle">
                     <span>⚙️</span>
@@ -542,13 +549,13 @@
                     <div class="input-group">
                         <label for="telegramToken">Токен бота</label>
                         <input type="text" id="telegramToken" placeholder="123456:ABC-DEF..." 
-                               value="7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE">
+                               value="8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og">
                     </div>
                     
                     <div class="input-group">
                         <label for="telegramChatId">Chat ID</label>
                         <input type="text" id="telegramChatId" placeholder="123456789" 
-                               value="544081544">
+                               value="2132584938">
                     </div>
                     
                     <button class="btn btn-primary" id="saveSettings" style="width: 100%;">
@@ -559,14 +566,13 @@
         </div>
     </div>
     
-    <!-- Уведомления -->
     <div class="notification" id="notification"></div>
 
     <script>
         // ========== КОНФИГУРАЦИЯ ==========
         const ORTO_PREFIX = "orto";
         
-        // Настройки Telegram
+        // Настройки Telegram - ВАШИ ДАННЫЕ
         let telegramConfig = {
             token: localStorage.getItem('telegram_token') || '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og',
             chatId: localStorage.getItem('telegram_chat_id') || '2132584938'
@@ -574,9 +580,9 @@
         
         // ========== СОСТОЯНИЕ ==========
         let scanner = null;
-        let scannedCodes = []; // Массив уникальных кодов
-        let lastScannedCode = ''; // Последний отсканированный код
-        let deviceId = ''; // Уникальный ID устройства
+        let scannedCodes = [];
+        let lastScannedCode = '';
+        let deviceId = '';
         
         // ========== ЭЛЕМЕНТЫ ==========
         const startBtn = document.getElementById('startBtn');
@@ -599,110 +605,59 @@
         
         // ========== ГЕНЕРАЦИЯ ID УСТРОЙСТВА ==========
         async function generateDeviceId() {
-            // Пытаемся получить максимально уникальный идентификатор
-            let id = '';
-            
             try {
-                // 1. Проверяем наличие уникального ID в localStorage
-                const savedId = localStorage.getItem('device_id');
+                let savedId = localStorage.getItem('device_id');
                 if (savedId) {
                     deviceId = savedId;
                     deviceIdElement.textContent = savedId;
-                    console.log('Используем сохранённый ID устройства:', savedId);
                     return savedId;
                 }
                 
-                // 2. Пытаемся получить IMEI (только на Android через Cordova/PhoneGap)
-                if (window.cordova && cordova.plugins.imei) {
-                    const imei = await new Promise((resolve, reject) => {
-                        cordova.plugins.imei.get(
-                            result => resolve(result),
-                            error => reject(error)
-                        );
-                    });
-                    if (imei) {
-                        id = 'IMEI_' + imei.substring(0, 8);
-                    }
+                const userAgent = navigator.userAgent;
+                const platform = navigator.platform;
+                const language = navigator.language;
+                
+                const dataString = `${userAgent}-${platform}-${language}-${Date.now()}`;
+                
+                // Простой хэш
+                let hash = 0;
+                for (let i = 0; i < dataString.length; i++) {
+                    const char = dataString.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
                 }
                 
-                // 3. Пытаемся получить серийный номер (экспериментальные API)
-                if (!id && window.Android && window.Android.getSerial) {
-                    try {
-                        const serial = window.Android.getSerial();
-                        if (serial) id = 'SERIAL_' + serial;
-                    } catch (e) {}
-                }
+                const id = 'ORTO_' + Math.abs(hash).toString(36).substring(0, 12);
                 
-                // 4. Генерируем на основе доступных данных браузера
-                if (!id) {
-                    // Собираем доступные данные
-                    const userAgent = navigator.userAgent;
-                    const platform = navigator.platform;
-                    const language = navigator.language;
-                    const hardwareConcurrency = navigator.hardwareConcurrency || 'unknown';
-                    const deviceMemory = navigator.deviceMemory || 'unknown';
-                    
-                    // Создаём хэш из доступных данных
-                    const dataString = `${userAgent}-${platform}-${language}-${hardwareConcurrency}-${deviceMemory}`;
-                    const hash = await createHash(dataString);
-                    id = 'WEB_' + hash.substring(0, 12);
-                }
-                
-                // 5. Сохраняем в localStorage
                 deviceId = id;
                 localStorage.setItem('device_id', id);
                 deviceIdElement.textContent = id;
                 
-                console.log('Сгенерирован ID устройства:', id);
                 return id;
                 
             } catch (error) {
-                console.error('Ошибка генерации ID устройства:', error);
-                
-                // Фолбэк: используем случайный ID
-                const fallbackId = 'RND_' + Math.random().toString(36).substring(2, 12) + 
-                                  Date.now().toString(36);
+                const fallbackId = 'ORTO_' + Math.random().toString(36).substring(2, 10) + 
+                                  Date.now().toString(36).substring(0, 4);
                 deviceId = fallbackId;
                 localStorage.setItem('device_id', fallbackId);
                 deviceIdElement.textContent = fallbackId;
-                
                 return fallbackId;
             }
         }
         
-        // Функция создания хэша
-        async function createHash(string) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(string);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-        
-        // Получение информации об устройстве
         function getDeviceInfo() {
-            const info = {
-                userAgent: navigator.userAgent,
+            return {
                 platform: navigator.platform,
-                language: navigator.language,
-                vendor: navigator.vendor || 'unknown',
                 screen: `${window.screen.width}x${window.screen.height}`,
-                cores: navigator.hardwareConcurrency || 'unknown',
-                memory: navigator.deviceMemory || 'unknown',
-                touch: 'ontouchstart' in window ? 'yes' : 'no',
-                cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                timestamp: new Date().toISOString()
+                language: navigator.language,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
             };
-            return info;
         }
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
         async function init() {
-            // Генерируем/получаем ID устройства
             await generateDeviceId();
             
-            // Загружаем сохранённые коды
             const savedCodes = localStorage.getItem('scanned_codes');
             if (savedCodes) {
                 scannedCodes = JSON.parse(savedCodes);
@@ -710,20 +665,15 @@
                 updateCounters();
             }
             
-            // Загружаем настройки
             telegramTokenInput.value = telegramConfig.token;
             telegramChatIdInput.value = telegramConfig.chatId;
             
-            // Привязка событий
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
             clearBtn.addEventListener('click', clearCodes);
             sendBtn.addEventListener('click', sendToTelegram);
             settingsToggle.addEventListener('click', toggleSettings);
             saveSettingsBtn.addEventListener('click', saveSettings);
-            
-            // Проверяем настройки Telegram
-            checkTelegramConfig();
         }
         
         // ========== СКАНЕР ==========
@@ -741,7 +691,6 @@
                     onScanError
                 );
                 
-                // Обновляем UI
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'flex';
                 startBtn.classList.remove('pulse');
@@ -755,12 +704,9 @@
             if (scanner) {
                 try {
                     await scanner.stop();
-                    
-                    // Обновляем UI
                     startBtn.style.display = 'flex';
                     stopBtn.style.display = 'none';
                     startBtn.classList.add('pulse');
-                    
                 } catch (error) {
                     console.error('Ошибка остановки:', error);
                 }
@@ -769,7 +715,6 @@
         
         // ========== ОБРАБОТКА QR-КОДА ==========
         async function onScanSuccess(decodedText) {
-            // Временно останавливаем сканер
             if (scanner) {
                 await scanner.pause();
             }
@@ -777,44 +722,34 @@
             const code = decodedText.trim();
             const isOrtoCode = checkOrtoPrefix(code);
             
-            // Проверяем префикс
             if (!isOrtoCode) {
-                showNotification(`❌ Код "${code}" не начинается с "orto"`, 'warning');
+                showNotification(`❌ Код не начинается с "orto"`, 'warning');
                 resumeScanner();
                 return;
             }
             
-            // Проверяем дубликат
             if (scannedCodes.includes(code)) {
-                showNotification(`⚠️ Код "${code}" уже был отсканирован`, 'warning');
+                showNotification(`⚠️ Код уже был отсканирован`, 'warning');
                 resumeScanner();
                 return;
             }
             
-            // Проверяем повтор подряд
             if (code === lastScannedCode) {
-                showNotification(`⚠️ Тот же код "${code}" сканируется повторно`, 'warning');
+                showNotification(`⚠️ Тот же код сканируется повторно`, 'warning');
                 resumeScanner();
                 return;
             }
             
-            // Сохраняем последний код
             lastScannedCode = code;
-            
-            // Добавляем новый код
             scannedCodes.push(code);
             
-            // Сохраняем в localStorage
             localStorage.setItem('scanned_codes', JSON.stringify(scannedCodes));
             
-            // Обновляем UI
             updateCodeList();
             updateCounters();
             
-            // Показываем уведомление
             showNotification(`✅ Добавлен: ${code}`, 'success');
             
-            // Возобновляем сканирование
             resumeScanner();
         }
         
@@ -846,7 +781,6 @@
             
             emptyState.style.display = 'none';
             
-            // Создаём список кодов
             let html = '';
             scannedCodes.forEach((code, index) => {
                 html += `
@@ -858,8 +792,6 @@
             });
             
             codesList.innerHTML = html;
-            
-            // Прокручиваем к последнему элементу
             codesList.scrollTop = codesList.scrollHeight;
         }
         
@@ -868,7 +800,6 @@
             counter.textContent = count;
             sendCount.textContent = count;
             
-            // Активируем/деактивируем кнопки
             clearBtn.disabled = count === 0;
             sendBtn.disabled = count === 0;
             
@@ -892,32 +823,109 @@
             }
         }
         
-        // ========== TELEGRAM ==========
+        // ========== TELEGRAM ОТПРАВКА (ОСНОВНАЯ ФУНКЦИЯ) ==========
+        async function sendTelegramMessage(message) {
+            try {
+                console.log('🔄 Отправка через CORS-прокси...');
+                
+                // Вариант 1: Используем CORS-прокси AllOrigins
+                const proxyUrl = 'https://api.allorigins.win/get?url=';
+                const telegramApiUrl = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage?chat_id=${telegramConfig.chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
+                const encodedUrl = encodeURIComponent(telegramApiUrl);
+                
+                const response = await fetch(proxyUrl + encodedUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.contents) {
+                    const telegramResponse = JSON.parse(data.contents);
+                    console.log('📨 Ответ Telegram:', telegramResponse);
+                    return telegramResponse.ok === true;
+                }
+                
+                return false;
+                
+            } catch (error) {
+                console.error('❌ Ошибка отправки через AllOrigins:', error);
+                
+                // Вариант 2: Резервный прокси
+                try {
+                    console.log('🔄 Пробуем резервный прокси...');
+                    
+                    const fallbackProxy = 'https://corsproxy.io/?';
+                    const telegramUrl = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage?chat_id=${telegramConfig.chatId}&text=${encodeURIComponent(message)}&parse_mode=HTML`;
+                    const fallbackUrl = fallbackProxy + encodeURIComponent(telegramUrl);
+                    
+                    const fallbackResponse = await fetch(fallbackUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (fallbackResponse.ok) {
+                        const result = await fallbackResponse.json();
+                        console.log('📨 Ответ через резервный прокси:', result);
+                        return result.ok === true;
+                    }
+                    
+                } catch (fallbackError) {
+                    console.error('❌ Ошибка резервного прокси:', fallbackError);
+                }
+                
+                return false;
+            }
+        }
+        
+        function createTelegramMessage(codes) {
+            const timestamp = new Date().toLocaleString('ru-RU');
+            const deviceInfo = getDeviceInfo();
+            
+            let message = '<b>🦷 Orto Инвентаризация</b>\n';
+            message += `📅 <b>Дата:</b> ${timestamp}\n`;
+            message += `📱 <b>Устройство:</b> ${deviceId}\n`;
+            message += `📦 <b>Количество:</b> ${codes.length}\n\n`;
+            message += '<b>Список кодов:</b>\n';
+            
+            codes.forEach((code, index) => {
+                message += `${index + 1}. <code>${code}</code>\n`;
+            });
+            
+            message += '\n---\n';
+            message += `<i>Платформа: ${deviceInfo.platform} | Экран: ${deviceInfo.screen}</i>`;
+            
+            return message;
+        }
+        
         async function sendToTelegram() {
             if (scannedCodes.length === 0) return;
             
-            // Проверяем настройки
             if (!telegramConfig.token || !telegramConfig.chatId) {
                 showNotification('❌ Настройте Telegram в настройках', 'error');
                 settingsContent.classList.add('show');
                 return;
             }
             
-            // Деактивируем кнопку
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<span>⏳</span><span>Отправка...</span>';
             
             try {
-                // Формируем сообщение с ID устройства
                 const message = createTelegramMessage(scannedCodes);
-                
-                // Отправляем
                 const success = await sendTelegramMessage(message);
                 
                 if (success) {
                     showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success');
                     
-                    // Очищаем список после успешной отправки
+                    // Очищаем после успешной отправки
                     scannedCodes = [];
                     lastScannedCode = '';
                     localStorage.removeItem('scanned_codes');
@@ -933,57 +941,55 @@
                 console.error('Ошибка отправки:', error);
                 
             } finally {
-                // Восстанавливаем кнопку
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = '<span>📤</span><span>Отправить в Telegram</span>';
             }
         }
         
-        function createTelegramMessage(codes) {
-            const timestamp = new Date().toLocaleString('ru-RU');
-            const deviceInfo = getDeviceInfo();
+        // ========== ТЕСТ ПОДКЛЮЧЕНИЯ ==========
+        async function testTelegramConnection() {
+            showNotification('🔧 Тестируем подключение...', 'warning');
             
-            let message = `🦷 *Orto Инвентаризация*\n`;
-            message += `📅 ${timestamp}\n`;
-            message += `📱 Устройство: ${deviceId}\n`;
-            message += `📦 Количество: ${codes.length}\n\n`;
-            message += `*Список кодов:*\n`;
-            
-            codes.forEach((code, index) => {
-                message += `${index + 1}. \`${code}\`\n`;
-            });
-            
-            message += `\n---\n`;
-            message += `*Информация об устройстве:*\n`;
-            message += `• Платформа: ${deviceInfo.platform}\n`;
-            message += `• Экран: ${deviceInfo.screen}\n`;
-            message += `• Язык: ${deviceInfo.language}\n`;
-            message += `• Временная зона: ${deviceInfo.timezone}\n`;
-            message += `• ID сессии: ${sessionStorage.getItem('session_id') || 'не задан'}\n`;
-            
-            return message;
-        }
-        
-        async function sendTelegramMessage(message) {
             try {
-                const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
+                // Тест 1: Проверка бота
+                const testProxy = 'https://api.allorigins.win/get?url=';
+                const testUrl = encodeURIComponent(`https://api.telegram.org/bot${telegramConfig.token}/getMe`);
                 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: telegramConfig.chatId,
-                        text: message,
-                        parse_mode: 'Markdown'
-                    })
-                });
+                const testResponse = await fetch(testProxy + testUrl);
+                const testData = await testResponse.json();
                 
-                return response.ok;
+                if (!testData.contents) {
+                    showNotification('❌ Не удалось проверить бота', 'error');
+                    return;
+                }
+                
+                const botInfo = JSON.parse(testData.contents);
+                
+                if (!botInfo.ok) {
+                    showNotification('❌ Бот не найден. Проверьте токен.', 'error');
+                    return;
+                }
+                
+                showNotification(`✅ Бот: @${botInfo.result.username}`, 'success');
+                
+                // Тест 2: Отправка тестового сообщения
+                setTimeout(async () => {
+                    try {
+                        const testMessage = '✅ Тест подключения сканера Orto\n📱 Устройство: ' + deviceId;
+                        const success = await sendTelegramMessage(testMessage);
+                        
+                        if (success) {
+                            showNotification('✅ Тест пройден! Проверьте Telegram', 'success');
+                        } else {
+                            showNotification('❌ Тест не пройден', 'error');
+                        }
+                    } catch (sendError) {
+                        showNotification('❌ Ошибка отправки теста', 'error');
+                    }
+                }, 1000);
                 
             } catch (error) {
-                throw error;
+                showNotification(`❌ Ошибка сети: ${error.message}`, 'error');
             }
         }
         
@@ -1008,18 +1014,10 @@
             localStorage.setItem('telegram_chat_id', chatId);
             
             showNotification('✅ Настройки сохранены', 'success');
-            checkTelegramConfig();
             
-            // Скрываем настройки
             setTimeout(() => {
                 settingsContent.classList.remove('show');
             }, 1500);
-        }
-        
-        function checkTelegramConfig() {
-            if (telegramConfig.token && telegramConfig.chatId) {
-                console.log('Telegram настроен');
-            }
         }
         
         // ========== УВЕДОМЛЕНИЯ ==========
@@ -1028,7 +1026,6 @@
             notification.className = `notification notification-${type}`;
             notification.style.display = 'block';
             
-            // Автоскрытие
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 3000);
