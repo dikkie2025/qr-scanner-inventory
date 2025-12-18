@@ -332,14 +332,11 @@
                 <button id="clearBtn" class="btn btn-clear" disabled>🗑 ОЧИСТИТЬ</button>
             </div>
             
+            <!-- УБРАНА КНОПКА ТИП - оставляем только количество кодов -->
             <div class="stats">
                 <div class="stat-box">
                     <div class="stat-value" id="count">0</div>
-                    <div>Кодов</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="operationType">-</div>
-                    <div>Тип</div>
+                    <div>Кодов отсканировано</div>
                 </div>
             </div>
             
@@ -400,7 +397,6 @@
             backBtn: document.getElementById('backBtn'),
             codesList: document.getElementById('codesList'),
             count: document.getElementById('count'),
-            operationType: document.getElementById('operationType'),
             operationTitle: document.getElementById('operationTitle'),
             operationBadge: document.getElementById('operationBadge'),
             notification: document.getElementById('notification'),
@@ -410,15 +406,12 @@
         
         // Переключение страниц
         function showPage(pageName) {
-            // Скрываем все страницы
             Object.values(pages).forEach(page => page.classList.remove('active'));
             
-            // Показываем нужную страницу
             if (pages[pageName]) {
                 pages[pageName].classList.add('active');
             }
             
-            // Если переходим на главную, останавливаем сканер
             if (pageName === 'main' && isScanning) {
                 stopScanner();
             }
@@ -431,13 +424,10 @@
             currentOperation = operationKey;
             const operation = OPERATIONS[operationKey];
             
-            // Обновляем интерфейс
             elements.operationTitle.textContent = operation.name;
             elements.operationBadge.textContent = operation.name;
             elements.operationBadge.style.background = operation.color;
-            elements.operationType.textContent = operation.emoji;
             
-            // Переходим на страницу сканера
             showPage('scanner');
         }
         
@@ -539,8 +529,8 @@
             }, duration);
         }
         
-        // Воспроизвести звуковой сигнал
-        function playBeep() {
+        // Воспроизвести звуковой сигнал (высокий для успеха, низкий для ошибки)
+        function playBeep(type = 'success') {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
@@ -549,14 +539,16 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                oscillator.frequency.value = 800;
+                // Высокий звук для успешного сканирования (800 Гц)
+                // Низкий звук для неудачного сканирования (400 Гц)
+                oscillator.frequency.value = type === 'success' ? 800 : 400;
                 oscillator.type = 'sine';
                 
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
                 
                 oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
+                oscillator.stop(audioContext.currentTime + 0.15);
                 
             } catch (e) {
                 // Игнорируем ошибки аудио
@@ -635,16 +627,21 @@
                 console.log('Распознан код:', code);
                 
                 if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                    showNotification('Неверный код: ' + code.substring(0, 20) + '...', 'error', 2000);
+                    // Низкий звук для неправильного кода
+                    playBeep('error');
+                    showNotification('❌ Неверный код: ' + code.substring(0, 20) + '...', 'error', 2000);
                     return;
                 }
                 
                 if (scannedCodes.includes(code)) {
-                    showNotification('Код уже отсканирован', 'warning', 2000);
+                    // Низкий звук для дубликата
+                    playBeep('error');
+                    showNotification('⚠️ Код уже отсканирован', 'warning', 2000);
                     return;
                 }
                 
-                playBeep();
+                // Высокий звук для успешного сканирования
+                playBeep('success');
                 
                 scannedCodes.push(code);
                 saveData();
@@ -654,6 +651,7 @@
                 
             } catch (error) {
                 console.error('Ошибка обработки:', error);
+                playBeep('error');
             }
         }
         
@@ -680,7 +678,7 @@
             scannedCodes = [];
             localStorage.removeItem(`orto_codes_${currentOperation}`);
             updateUI();
-            showNotification(`Очищено ${count} кодов`, 'warning');
+            showNotification(`🗑️ Очищено ${count} кодов`, 'warning');
         }
         
         // Отправка в Telegram с типом операции
@@ -690,11 +688,9 @@
             const token = '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og';
             const chatId = '2132584938';
             
-            // Получаем информацию об устройстве
             const deviceInfo = await getDeviceInfo();
             const operation = OPERATIONS[currentOperation];
             
-            // Формируем сообщение с типом операции
             let message = `${operation.emoji} *${operation.name}*\n`;
             message += `📅 Дата: ${new Date().toLocaleString('ru-RU')}\n`;
             message += `📦 Количество кодов: ${scannedCodes.length}\n`;
@@ -710,7 +706,6 @@
             
             message += `\n✅ *Итого:* ${scannedCodes.length} шт.`;
             
-            // Отправляем
             try {
                 elements.sendBtn.disabled = true;
                 elements.sendBtn.textContent = '📤 ОТПРАВКА...';
@@ -727,14 +722,14 @@
                 });
                 
                 if (response.ok) {
-                    showNotification(`Отправлено ${scannedCodes.length} кодов`, 'success', 4000);
-                    clearCodes(); // Автоматически очищаем после отправки
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success', 4000);
+                    clearCodes();
                 } else {
                     throw new Error('Ошибка отправки');
                 }
                 
             } catch (error) {
-                showNotification('Ошибка отправки в Telegram', 'error', 4000);
+                showNotification('❌ Ошибка отправки в Telegram', 'error', 4000);
                 console.error('Ошибка:', error);
             } finally {
                 elements.sendBtn.disabled = false;
@@ -744,11 +739,9 @@
         
         // Инициализация
         async function init() {
-            // Генерируем ID устройства
             deviceId = generateDeviceId();
             elements.deviceIdPreview.textContent = deviceId.substring(0, 10) + '...';
             
-            // Обработчики главного меню
             document.querySelectorAll('.menu-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const operation = e.currentTarget.getAttribute('data-operation');
@@ -757,14 +750,12 @@
                 });
             });
             
-            // Обработчики страницы сканера
             elements.startBtn.addEventListener('click', startScanner);
             elements.stopBtn.addEventListener('click', stopScanner);
             elements.clearBtn.addEventListener('click', clearCodes);
             elements.sendBtn.addEventListener('click', sendToTelegram);
             elements.backBtn.addEventListener('click', () => showPage('main'));
             
-            // Проверяем поддержку камеры
             if (!checkCameraSupport()) {
                 return;
             }
@@ -772,7 +763,6 @@
             console.log('Orto Scanner готов. ID устройства:', deviceId);
         }
         
-        // Запуск при загрузке
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
