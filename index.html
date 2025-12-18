@@ -32,6 +32,20 @@
             overflow: hidden;
             margin-bottom: 20px;
             border: 3px solid #0056a3;
+            position: relative;
+        }
+        
+        /* Индикатор состояния */
+        .scan-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
         }
         
         .controls {
@@ -138,6 +152,33 @@
             border-radius: 5px;
             display: none;
             z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .quality-indicator {
+            height: 5px;
+            background: #ddd;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .quality-bar {
+            height: 100%;
+            width: 0%;
+            background: #28a745;
+            transition: width 0.3s;
+        }
+        
+        .test-button {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -145,7 +186,9 @@
     <div class="container">
         <h1>Orto QR Scanner</h1>
         
-        <div id="reader"></div>
+        <div id="reader">
+            <div class="scan-indicator" id="scanIndicator">Ожидание</div>
+        </div>
         
         <div class="controls">
             <button id="startBtn">▶ СТАРТ</button>
@@ -159,9 +202,13 @@
                 <div>Кодов</div>
             </div>
             <div class="stat-box">
-                <div class="stat-value" id="lastScan">-</div>
-                <div>Последний</div>
+                <div class="stat-value" id="successRate">100%</div>
+                <div>Успешных</div>
             </div>
+        </div>
+        
+        <div class="quality-indicator">
+            <div class="quality-bar" id="qualityBar"></div>
         </div>
         
         <div class="codes-list" id="codesList">
@@ -172,21 +219,27 @@
         
         <button id="sendBtn" disabled>📤 ОТПРАВИТЬ В TELEGRAM</button>
         
+        <button class="test-button" id="testBtn">🔍 ТЕСТ РАСПОЗНАВАНИЯ</button>
+        
         <div class="debug-info">
             <div>Статус: <span id="status">Ожидание...</span></div>
-            <div>Камера: <span id="cameraStatus">Не активна</span></div>
-            <div>Распознано: <span id="recognized">0</span> кодов</div>
+            <div>Попыток: <span id="attempts">0</span> | Успешно: <span id="successCount">0</span></div>
+            <div>Последний код: <span id="lastCodePreview">-</span></div>
         </div>
     </div>
     
     <div id="notification"></div>
 
     <script>
-        // Простая базовая конфигурация
+        // Конфигурация
         const ORTO_PREFIX = "orto";
         let scanner = null;
         let scannedCodes = [];
         let isScanning = false;
+        let totalAttempts = 0;
+        let successfulScans = 0;
+        let lastScanTime = 0;
+        let scanCooldown = 500; // 500ms между сканированиями
         
         // Элементы
         const elements = {
@@ -194,23 +247,28 @@
             stopBtn: document.getElementById('stopBtn'),
             clearBtn: document.getElementById('clearBtn'),
             sendBtn: document.getElementById('sendBtn'),
+            testBtn: document.getElementById('testBtn'),
             codesList: document.getElementById('codesList'),
             count: document.getElementById('count'),
-            lastScan: document.getElementById('lastScan'),
+            successRate: document.getElementById('successRate'),
+            qualityBar: document.getElementById('qualityBar'),
+            scanIndicator: document.getElementById('scanIndicator'),
             status: document.getElementById('status'),
-            cameraStatus: document.getElementById('cameraStatus'),
-            recognized: document.getElementById('recognized'),
+            attempts: document.getElementById('attempts'),
+            successCount: document.getElementById('successCount'),
+            lastCodePreview: document.getElementById('lastCodePreview'),
             notification: document.getElementById('notification')
         };
         
         // Загрузка сохраненных данных
         function loadSavedData() {
-            const saved = localStorage.getItem('orto_scanner_data');
+            const saved = localStorage.getItem('orto_scanner_data_v2');
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
                     scannedCodes = data.codes || [];
                     updateUI();
+                    showNotification('Загружено сохраненных кодов: ' + scannedCodes.length);
                 } catch (e) {
                     console.log('Нет сохраненных данных');
                 }
@@ -223,7 +281,7 @@
                 codes: scannedCodes,
                 timestamp: new Date().toISOString()
             };
-            localStorage.setItem('orto_scanner_data', JSON.stringify(data));
+            localStorage.setItem('orto_scanner_data_v2', JSON.stringify(data));
         }
         
         // Обновление интерфейса
@@ -232,13 +290,23 @@
             elements.clearBtn.disabled = scannedCodes.length === 0;
             elements.sendBtn.disabled = scannedCodes.length === 0;
             
+            // Расчет успешности
+            const successRate = totalAttempts > 0 ? Math.round((successfulScans / totalAttempts) * 100) : 100;
+            elements.successRate.textContent = successRate + '%';
+            elements.qualityBar.style.width = successRate + '%';
+            elements.qualityBar.style.background = successRate > 70 ? '#28a745' : 
+                                                   successRate > 40 ? '#ffc107' : '#dc3545';
+            
+            elements.attempts.textContent = totalAttempts;
+            elements.successCount.textContent = successfulScans;
+            
             if (scannedCodes.length > 0) {
                 const lastCode = scannedCodes[scannedCodes.length - 1];
-                elements.lastScan.textContent = lastCode.substring(0, 15) + '...';
+                elements.lastCodePreview.textContent = lastCode.substring(0, 20) + (lastCode.length > 20 ? '...' : '');
                 
                 // Обновляем список
                 let html = '';
-                const lastCodes = scannedCodes.slice(-10).reverse();
+                const lastCodes = scannedCodes.slice(-8).reverse();
                 
                 lastCodes.forEach((code, index) => {
                     html += `<div class="code-item">${scannedCodes.length - index}. ${code}</div>`;
@@ -247,54 +315,78 @@
                 elements.codesList.innerHTML = html;
             } else {
                 elements.codesList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Здесь будут отсканированные коды</div>';
-                elements.lastScan.textContent = '-';
+                elements.lastCodePreview.textContent = '-';
             }
-            
-            elements.recognized.textContent = scannedCodes.length;
         }
         
         // Показать уведомление
-        function showNotification(message, type = 'info') {
+        function showNotification(message, type = 'info', duration = 3000) {
             elements.notification.textContent = message;
             elements.notification.style.background = type === 'error' ? '#dc3545' : 
-                                                    type === 'success' ? '#28a745' : '#17a2b8';
+                                                    type === 'success' ? '#28a745' : 
+                                                    type === 'warning' ? '#ffc107' : '#17a2b8';
             elements.notification.style.display = 'block';
             
             setTimeout(() => {
                 elements.notification.style.display = 'none';
-            }, 3000);
+            }, duration);
         }
         
-        // Запуск сканера - УПРОЩЕННАЯ ВЕРСИЯ
+        // Обновить индикатор сканирования
+        function updateScanIndicator(status, color = '#ffc107') {
+            elements.scanIndicator.textContent = status;
+            elements.scanIndicator.style.background = color;
+        }
+        
+        // Запуск сканера с улучшенными настройками
         async function startScanner() {
             if (isScanning) return;
             
             try {
-                elements.status.textContent = 'Запуск...';
-                elements.cameraStatus.textContent = 'Запуск...';
+                elements.status.textContent = 'Запуск камеры...';
+                updateScanIndicator('Запуск...', '#ffc107');
                 
                 // Создаем сканер
                 scanner = new Html5Qrcode("reader");
                 
-                // ПРОСТАЯ КОНФИГУРАЦИЯ
+                // ОПТИМИЗИРОВАННЫЕ НАСТРОЙКИ ДЛЯ ЛУЧШЕГО РАСПОЗНАВАНИЯ
                 const config = {
-                    fps: 10, // Медленнее, но стабильнее
-                    qrbox: { width: 250, height: 250 },
+                    fps: 15, // Оптимальный баланс скорости и качества
+                    qrbox: {
+                        width: 280,  // Увеличенная область
+                        height: 280  // для лучшего распознавания
+                    },
                     aspectRatio: 1.0,
-                    disableFlip: false
+                    disableFlip: false, // Включаем обработку повернутых кодов
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    },
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.QR_CODE
+                    ],
+                    videoConstraints: {
+                        facingMode: "environment",
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 30 }
+                    }
                 };
                 
-                // Запускаем с максимально простыми настройками
+                // Запускаем сканер
                 await scanner.start(
-                    { facingMode: "environment" }, // Пробуем заднюю камеру
-                    config,
-                    (decodedText) => {
-                        // Обработка успешного сканирования
-                        handleScan(decodedText);
+                    {
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     },
-                    (error) => {
-                        // Игнорируем ошибки сканирования
-                        console.log('Scan error:', error);
+                    config,
+                    (decodedText, decodedResult) => {
+                        // Обработка успешного сканирования
+                        handleSuccessfulScan(decodedText, decodedResult);
+                    },
+                    (errorMessage, error) => {
+                        // Обработка ошибок сканирования
+                        handleScanError(errorMessage, error);
                     }
                 );
                 
@@ -303,35 +395,127 @@
                 elements.startBtn.style.display = 'none';
                 elements.stopBtn.style.display = 'block';
                 elements.status.textContent = 'Сканирование...';
-                elements.cameraStatus.textContent = 'Активна';
-                showNotification('Сканер запущен', 'success');
+                updateScanIndicator('Готов к сканированию', '#28a745');
+                showNotification('Сканер запущен. Наведите на QR-код', 'success');
                 
             } catch (error) {
-                console.error('Ошибка запуска:', error);
+                console.error('Ошибка запуска основной камеры:', error);
                 
-                // Пробуем фронтальную камеру
+                // Пробуем альтернативные настройки
                 try {
-                    elements.status.textContent = 'Пробуем фронтальную камеру...';
+                    elements.status.textContent = 'Пробуем упрощенные настройки...';
                     
+                    // Простые настройки для совместимости
                     await scanner.start(
                         { facingMode: "user" }, // Фронтальная камера
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
-                        (decodedText) => handleScan(decodedText),
-                        (error) => console.log('Scan error:', error)
+                        {
+                            fps: 10,
+                            qrbox: 250,
+                            aspectRatio: 1.0
+                        },
+                        (decodedText) => handleSuccessfulScan(decodedText),
+                        (errorMessage) => handleScanError(errorMessage)
                     );
                     
                     isScanning = true;
                     elements.startBtn.style.display = 'none';
                     elements.stopBtn.style.display = 'block';
-                    elements.status.textContent = 'Сканирование (фронт. камера)...';
-                    elements.cameraStatus.textContent = 'Фронтальная активна';
-                    showNotification('Используется фронтальная камера', 'warning');
+                    elements.status.textContent = 'Сканирование (простой режим)...';
+                    updateScanIndicator('Простой режим', '#ffc107');
+                    showNotification('Запущен простой режим сканирования', 'warning');
                     
                 } catch (secondError) {
-                    elements.status.textContent = 'Ошибка';
-                    showNotification('Не удалось запустить камеру', 'error');
+                    elements.status.textContent = 'Ошибка запуска';
+                    updateScanIndicator('Ошибка', '#dc3545');
+                    showNotification('Не удалось запустить камеру. Проверьте разрешения.', 'error', 5000);
                 }
             }
+        }
+        
+        // Обработка успешного сканирования
+        function handleSuccessfulScan(decodedText, decodedResult = null) {
+            totalAttempts++;
+            const now = Date.now();
+            
+            // Защита от слишком частого сканирования
+            if (now - lastScanTime < scanCooldown) {
+                console.log('Пропуск: слишком частое сканирование');
+                return;
+            }
+            
+            lastScanTime = now;
+            
+            try {
+                const code = decodedText.trim();
+                console.log('✅ Распознан код:', code);
+                
+                // Проверяем префикс
+                if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
+                    console.log('⚠️ Неверный префикс:', code);
+                    updateScanIndicator('Неверный префикс', '#ffc107');
+                    showNotification('Код должен начинаться с "orto"', 'warning', 2000);
+                    return;
+                }
+                
+                // Проверяем дубликат
+                if (scannedCodes.includes(code)) {
+                    console.log('⚠️ Дубликат:', code);
+                    updateScanIndicator('Дубликат', '#ffc107');
+                    showNotification('Код уже отсканирован', 'warning', 2000);
+                    return;
+                }
+                
+                // Успешное сканирование
+                successfulScans++;
+                
+                // Добавляем код
+                scannedCodes.push(code);
+                
+                // Сохраняем
+                saveData();
+                
+                // Обновляем UI
+                updateUI();
+                
+                // Обновляем индикатор
+                updateScanIndicator('Успешно!', '#28a745');
+                
+                // Показываем уведомление
+                showNotification(`✅ Добавлен: ${code.substring(0, 25)}...`, 'success', 2000);
+                
+                // Мигание индикатора
+                setTimeout(() => {
+                    if (isScanning) {
+                        updateScanIndicator('Готов к сканированию', '#28a745');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Ошибка обработки кода:', error);
+                updateScanIndicator('Ошибка обработки', '#dc3545');
+            }
+        }
+        
+        // Обработка ошибок сканирования
+        function handleScanError(errorMessage, error = null) {
+            totalAttempts++;
+            
+            // Игнорируем некоторые типы ошибок
+            if (errorMessage.includes('NotFoundException') || 
+                errorMessage.includes('NotReadableError')) {
+                return;
+            }
+            
+            console.log('Scan error:', errorMessage);
+            
+            // Визуальная обратная связь
+            updateScanIndicator('Ошибка чтения', '#dc3545');
+            
+            setTimeout(() => {
+                if (isScanning) {
+                    updateScanIndicator('Готов к сканированию', '#28a745');
+                }
+            }, 500);
         }
         
         // Остановка сканера
@@ -343,46 +527,11 @@
                     elements.startBtn.style.display = 'block';
                     elements.stopBtn.style.display = 'none';
                     elements.status.textContent = 'Остановлено';
-                    elements.cameraStatus.textContent = 'Не активна';
+                    updateScanIndicator('Остановлено', '#6c757d');
                     showNotification('Сканирование остановлено', 'warning');
                 } catch (error) {
                     console.error('Ошибка остановки:', error);
                 }
-            }
-        }
-        
-        // Обработка отсканированного кода
-        function handleScan(decodedText) {
-            try {
-                const code = decodedText.trim();
-                console.log('Распознан код:', code);
-                
-                // Проверяем префикс
-                if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                    console.log('Неверный префикс:', code);
-                    return;
-                }
-                
-                // Проверяем дубликат
-                if (scannedCodes.includes(code)) {
-                    showNotification('Код уже был отсканирован', 'warning');
-                    return;
-                }
-                
-                // Добавляем код
-                scannedCodes.push(code);
-                
-                // Сохраняем
-                saveData();
-                
-                // Обновляем UI
-                updateUI();
-                
-                // Показываем уведомление
-                showNotification(`Добавлен: ${code.substring(0, 20)}...`, 'success');
-                
-            } catch (error) {
-                console.error('Ошибка обработки кода:', error);
             }
         }
         
@@ -398,6 +547,21 @@
             }
         }
         
+        // Тест распознавания
+        function testRecognition() {
+            // Симулируем сканирование тестового кода
+            const testCode = `orto-test-${Date.now().toString().slice(-6)}`;
+            console.log('🔍 Тестовое сканирование:', testCode);
+            
+            // Имитируем сканирование
+            updateScanIndicator('Тестирование...', '#17a2b8');
+            
+            setTimeout(() => {
+                handleSuccessfulScan(testCode);
+                showNotification('Тестовое сканирование выполнено', 'success');
+            }, 500);
+        }
+        
         // Отправка в Telegram
         async function sendToTelegram() {
             if (scannedCodes.length === 0) return;
@@ -406,13 +570,13 @@
             const chatId = '2132584938';
             
             // Формируем сообщение
-            let message = `Orto Инвентаризация\n`;
-            message += `Дата: ${new Date().toLocaleString('ru-RU')}\n`;
-            message += `Количество: ${scannedCodes.length}\n\n`;
-            message += `Список кодов:\n`;
+            let message = `🦷 *Orto Инвентаризация*\n`;
+            message += `📅 ${new Date().toLocaleString('ru-RU')}\n`;
+            message += `📦 Количество: ${scannedCodes.length}\n\n`;
+            message += `*Список кодов:*\n`;
             
             scannedCodes.forEach((code, index) => {
-                message += `${index + 1}. ${code}\n`;
+                message += `${index + 1}. \`${code}\`\n`;
             });
             
             // Отправляем
@@ -426,19 +590,20 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         chat_id: chatId,
-                        text: message
+                        text: message,
+                        parse_mode: 'Markdown'
                     })
                 });
                 
                 if (response.ok) {
-                    showNotification(`Отправлено ${scannedCodes.length} кодов`, 'success');
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов в Telegram`, 'success', 4000);
                     clearCodes(); // Очищаем после отправки
                 } else {
                     throw new Error('Ошибка отправки');
                 }
                 
             } catch (error) {
-                showNotification('Ошибка отправки в Telegram', 'error');
+                showNotification('❌ Ошибка отправки в Telegram', 'error', 4000);
                 console.error('Ошибка:', error);
             } finally {
                 elements.sendBtn.disabled = false;
@@ -455,13 +620,14 @@
             elements.stopBtn.addEventListener('click', stopScanner);
             elements.clearBtn.addEventListener('click', clearCodes);
             elements.sendBtn.addEventListener('click', sendToTelegram);
+            elements.testBtn.addEventListener('click', testRecognition);
             
-            // Автостарт через 2 секунды
+            // Автостарт через 1 секунду
             setTimeout(() => {
                 if (!isScanning) {
                     startScanner();
                 }
-            }, 2000);
+            }, 1000);
             
             // Горячие клавиши
             document.addEventListener('keydown', (e) => {
@@ -477,15 +643,19 @@
                 if (e.code === 'Escape') {
                     clearCodes();
                 }
+                
+                if (e.code === 'KeyT' && e.ctrlKey) {
+                    testRecognition();
+                }
             });
+            
+            // Информация
+            console.log('Orto Scanner v2 loaded');
+            console.log('Для теста нажмите кнопку "ТЕСТ РАСПОЗНАВАНИЯ" или Ctrl+T');
         }
         
         // Запуск при загрузке
         document.addEventListener('DOMContentLoaded', init);
-        
-        // Отладка в консоли
-        console.log('Orto Scanner loaded');
-        console.log('Для теста создайте QR-код со значением: orto-test-12345');
     </script>
 </body>
 </html>
