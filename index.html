@@ -315,7 +315,7 @@
             border-left: 4px solid #ec971f;
         }
         
-        /* Настройки Email */
+        /* Настройки Telegram */
         .settings {
             margin-top: 25px;
             padding-top: 25px;
@@ -495,40 +495,28 @@
             </div>
             
             <button class="btn btn-success" id="sendBtn" disabled style="width: 100%;">
-                <span>📧</span>
-                <span>Отправить по Email</span>
+                <span>📤</span>
+                <span>Отправить в Telegram</span>
             </button>
             
-            <!-- Настройки Email -->
+            <!-- Настройки Telegram -->
             <div class="settings">
                 <button class="settings-toggle" id="settingsToggle">
                     <span>⚙️</span>
-                    <span>Настройки Email</span>
+                    <span>Настройки Telegram</span>
                 </button>
                 
                 <div class="settings-content" id="settingsContent">
                     <div class="input-group">
-                        <label for="smtpServer">SMTP Сервер</label>
-                        <input type="text" id="smtpServer" placeholder="smtp.example.com" 
-                               value="imap.extru.ru">
+                        <label for="telegramToken">Токен бота</label>
+                        <input type="text" id="telegramToken" placeholder="123456:ABC-DEF..." 
+                               value="7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE">
                     </div>
                     
                     <div class="input-group">
-                        <label for="emailFrom">Email отправителя</label>
-                        <input type="email" id="emailFrom" placeholder="user@example.com" 
-                               value="dikkie@extru.ru">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="emailTo">Email получателя</label>
-                        <input type="email" id="emailTo" placeholder="recipient@example.com" 
-                               value="dikkie@extru.ru">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="emailPassword">Пароль</label>
-                        <input type="password" id="emailPassword" placeholder="Пароль" 
-                               value="Rapupizdrik2359$@">
+                        <label for="telegramChatId">Chat ID</label>
+                        <input type="text" id="telegramChatId" placeholder="123456789" 
+                               value="544081544">
                     </div>
                     
                     <button class="btn btn-primary" id="saveSettings" style="width: 100%;">
@@ -546,12 +534,10 @@
         // ========== КОНФИГУРАЦИЯ ==========
         const ORTO_PREFIX = "orto";
         
-        // Настройки Email
-        let emailConfig = {
-            smtpServer: localStorage.getItem('email_smtp_server') || 'imap.extru.ru',
-            emailFrom: localStorage.getItem('email_from') || 'dikkie@extru.ru',
-            emailTo: localStorage.getItem('email_to') || 'dikkie@extru.ru',
-            password: localStorage.getItem('email_password') || 'Rapupizdrik2359$@'
+        // Настройки Telegram
+        let telegramConfig = {
+            token: localStorage.getItem('telegram_token') || '7136917938:AAEJ2u1Y6nRrCD-RyAWhfPp9oMOzKDDmnvE',
+            chatId: localStorage.getItem('telegram_chat_id') || '544081544'
         };
         
         // ========== СОСТОЯНИЕ ==========
@@ -573,10 +559,8 @@
         // Настройки
         const settingsToggle = document.getElementById('settingsToggle');
         const settingsContent = document.getElementById('settingsContent');
-        const smtpServerInput = document.getElementById('smtpServer');
-        const emailFromInput = document.getElementById('emailFrom');
-        const emailToInput = document.getElementById('emailTo');
-        const emailPasswordInput = document.getElementById('emailPassword');
+        const telegramTokenInput = document.getElementById('telegramToken');
+        const telegramChatIdInput = document.getElementById('telegramChatId');
         const saveSettingsBtn = document.getElementById('saveSettings');
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
@@ -590,21 +574,19 @@
             }
             
             // Загружаем настройки
-            smtpServerInput.value = emailConfig.smtpServer;
-            emailFromInput.value = emailConfig.emailFrom;
-            emailToInput.value = emailConfig.emailTo;
-            emailPasswordInput.value = emailConfig.password;
+            telegramTokenInput.value = telegramConfig.token;
+            telegramChatIdInput.value = telegramConfig.chatId;
             
             // Привязка событий
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
             clearBtn.addEventListener('click', clearCodes);
-            sendBtn.addEventListener('click', sendByEmail);
+            sendBtn.addEventListener('click', sendToTelegram);
             settingsToggle.addEventListener('click', toggleSettings);
             saveSettingsBtn.addEventListener('click', saveSettings);
             
-            // Проверяем настройки Email
-            checkEmailConfig();
+            // Проверяем настройки Telegram
+            checkTelegramConfig();
         }
         
         // ========== СКАНЕР ==========
@@ -773,13 +755,13 @@
             }
         }
         
-        // ========== EMAIL ==========
-        async function sendByEmail() {
+        // ========== TELEGRAM ==========
+        async function sendToTelegram() {
             if (scannedCodes.length === 0) return;
             
             // Проверяем настройки
-            if (!emailConfig.smtpServer || !emailConfig.emailFrom || !emailConfig.emailTo || !emailConfig.password) {
-                showNotification('❌ Заполните все настройки Email', 'error');
+            if (!telegramConfig.token || !telegramConfig.chatId) {
+                showNotification('❌ Настройте Telegram в настройках', 'error');
                 settingsContent.classList.add('show');
                 return;
             }
@@ -790,13 +772,13 @@
             
             try {
                 // Формируем сообщение
-                const emailContent = createEmailContent(scannedCodes);
+                const message = createTelegramMessage(scannedCodes);
                 
                 // Отправляем
-                const success = await sendEmail(emailContent);
+                const success = await sendTelegramMessage(message);
                 
                 if (success) {
-                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов на ${emailConfig.emailTo}`, 'success');
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success');
                     
                     // Очищаем список после успешной отправки
                     scannedCodes = [];
@@ -806,120 +788,69 @@
                     updateCounters();
                     
                 } else {
-                    showNotification('❌ Ошибка отправки email', 'error');
+                    showNotification('❌ Ошибка отправки', 'error');
                 }
                 
             } catch (error) {
-                showNotification('❌ Ошибка сети при отправке', 'error');
+                showNotification('❌ Ошибка сети', 'error');
                 console.error('Ошибка отправки:', error);
                 
             } finally {
                 // Восстанавливаем кнопку
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = '<span>📧</span><span>Отправить по Email</span>';
+                sendBtn.innerHTML = '<span>📤</span><span>Отправить в Telegram</span>';
             }
         }
         
-        function createEmailContent(codes) {
+        function createTelegramMessage(codes) {
             const timestamp = new Date().toLocaleString('ru-RU');
+            let message = `🦷 *Orto Инвентаризация*\n`;
+            message += `📅 ${timestamp}\n`;
+            message += `📦 Количество: ${codes.length}\n\n`;
+            message += `*Список кодов:*\n`;
             
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                        .header { background: #0056a3; color: white; padding: 20px; border-radius: 8px; }
-                        .content { padding: 20px; }
-                        .codes-list { margin: 20px 0; }
-                        .code-item { background: #f8f9fa; padding: 10px; margin: 5px 0; border-left: 4px solid #0056a3; font-family: monospace; }
-                        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>🦷 Orto Инвентаризация</h1>
-                        <p>📅 ${timestamp}</p>
-                        <p>📦 Количество кодов: ${codes.length}</p>
-                    </div>
-                    
-                    <div class="content">
-                        <h2>Отсканированные коды:</h2>
-                        <div class="codes-list">
-                            ${codes.map((code, index) => 
-                                `<div class="code-item">${index + 1}. ${code}</div>`
-                            ).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>Это письмо было отправлено автоматически из приложения Orto Scanner.</p>
-                        <p>Всего отсканировано кодов: ${codes.length}</p>
-                    </div>
-                </body>
-                </html>
-            `;
+            codes.forEach((code, index) => {
+                message += `${index + 1}. \`${code}\`\n`;
+            });
             
-            const textContent = `
-                Orto Инвентаризация
-                Дата: ${timestamp}
-                Количество кодов: ${codes.length}
-                
-                Отсканированные коды:
-                ${codes.map((code, index) => `${index + 1}. ${code}`).join('\n')}
-                
-                ---
-                Это письмо было отправлено автоматически из приложения Orto Scanner.
-            `;
-            
-            return {
-                subject: `Orto Инвентаризация - ${codes.length} кодов - ${timestamp}`,
-                html: htmlContent,
-                text: textContent
-            };
+            return message;
         }
         
-        async function sendEmail(emailContent) {
+        async function sendTelegramMessage(message) {
             try {
-                // Внимание: Отправка email напрямую из браузера небезопасна
-                // В реальном приложении лучше использовать серверный endpoint
+                const url = `https://api.telegram.org/bot${telegramConfig.token}/sendMessage`;
                 
-                // Создаем FormData с данными для отправки
-                const formData = new FormData();
-                formData.append('smtp_server', emailConfig.smtpServer);
-                formData.append('from', emailConfig.emailFrom);
-                formData.append('to', emailConfig.emailTo);
-                formData.append('password', emailConfig.password);
-                formData.append('subject', emailContent.subject);
-                formData.append('html', emailContent.html);
-                formData.append('text', emailContent.text);
-                
-                // Для демонстрации используем EmailJS или другой сервис
-                // В данном случае покажем как это можно сделать через SMTP.js
-                
-                // Используем EmailJS как пример
-                // Для работы нужно зарегистрироваться на emailjs.com
-                
-                // Альтернатива: использовать fetch к вашему серверу
-                const response = await fetch('https://your-server.com/send-email', {
+                const response = await fetch(url, {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chat_id: telegramConfig.chatId,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
                 });
                 
-                return response.ok;
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Ошибка Telegram:', data);
+                    if (data.description && data.description.includes('bot was blocked')) {
+                        showNotification('❌ Бот заблокирован пользователем', 'error');
+                    } else if (data.description && data.description.includes('chat not found')) {
+                        showNotification('❌ Chat ID не найден', 'error');
+                    } else if (data.description && data.description.includes('invalid token')) {
+                        showNotification('❌ Неверный токен бота', 'error');
+                    }
+                    return false;
+                }
+                
+                return true;
                 
             } catch (error) {
-                console.error('Ошибка отправки email:', error);
-                
-                // Заглушка для демонстрации
-                // В реальном приложении здесь должен быть реальный код отправки
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        // Имитируем успешную отправку для демо
-                        resolve(true);
-                    }, 2000);
-                });
+                console.error('Ошибка сети:', error);
+                throw error;
             }
         }
         
@@ -929,28 +860,22 @@
         }
         
         function saveSettings() {
-            const smtpServer = smtpServerInput.value.trim();
-            const emailFrom = emailFromInput.value.trim();
-            const emailTo = emailToInput.value.trim();
-            const password = emailPasswordInput.value.trim();
+            const token = telegramTokenInput.value.trim();
+            const chatId = telegramChatIdInput.value.trim();
             
-            if (!smtpServer || !emailFrom || !emailTo || !password) {
-                showNotification('❌ Заполните все поля', 'error');
+            if (!token || !chatId) {
+                showNotification('❌ Заполните оба поля', 'error');
                 return;
             }
             
-            emailConfig.smtpServer = smtpServer;
-            emailConfig.emailFrom = emailFrom;
-            emailConfig.emailTo = emailTo;
-            emailConfig.password = password;
+            telegramConfig.token = token;
+            telegramConfig.chatId = chatId;
             
-            localStorage.setItem('email_smtp_server', smtpServer);
-            localStorage.setItem('email_from', emailFrom);
-            localStorage.setItem('email_to', emailTo);
-            localStorage.setItem('email_password', password);
+            localStorage.setItem('telegram_token', token);
+            localStorage.setItem('telegram_chat_id', chatId);
             
             showNotification('✅ Настройки сохранены', 'success');
-            checkEmailConfig();
+            checkTelegramConfig();
             
             // Скрываем настройки
             setTimeout(() => {
@@ -958,10 +883,9 @@
             }, 1500);
         }
         
-        function checkEmailConfig() {
-            if (emailConfig.smtpServer && emailConfig.emailFrom && 
-                emailConfig.emailTo && emailConfig.password) {
-                console.log('Email настроен');
+        function checkTelegramConfig() {
+            if (telegramConfig.token && telegramConfig.chatId) {
+                console.log('Telegram настроен');
             }
         }
         
