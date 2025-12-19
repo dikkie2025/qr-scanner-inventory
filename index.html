@@ -1,941 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orto Scanner</title>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <title>Подключиться к серверу</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f5f5f5;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        
-        .page {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .page.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            background: #f0f0f0;
         }
         
         .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .logo {
-            height: 70px;
-            width: auto;
-            margin-bottom: 15px;
-        }
-        
-        .page-title {
-            font-size: 18px;
-            color: #0056a3;
-            font-weight: bold;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        
-        .server-settings {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .settings-title {
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #0056a3;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #555;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        
-        .test-btn {
-            width: 100%;
-            padding: 12px;
-            background: #17a2b8;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-        
-        .test-result {
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 13px;
-            text-align: center;
-            display: none;
-        }
-        
-        .main-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .menu-btn {
-            padding: 18px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-        
-        .menu-btn-receipt {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-        }
-        
-        .menu-btn-shipment {
-            background: linear-gradient(135deg, #17a2b8, #20c9c9);
-            color: white;
-        }
-        
-        .menu-btn-inventory {
-            background: linear-gradient(135deg, #6f42c1, #9b6bcc);
-            color: white;
-        }
-        
-        #reader {
-            width: 100%;
-            height: 280px;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            border: 3px solid #0056a3;
-        }
-        
-        .scanner-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .operation-badge {
-            background: #0056a3;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
         
         .controls {
+            padding: 20px;
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            justify-content: center;
+            background: white;
+            border-bottom: 1px solid #ddd;
         }
         
-        .btn {
-            flex: 1;
-            padding: 12px;
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
             cursor: pointer;
             font-weight: bold;
         }
         
-        .btn-start {
-            background: #28a745;
-            color: white;
+        button:hover {
+            background: #5a6fd8;
         }
         
-        .btn-stop {
-            background: #dc3545;
-            color: white;
-            display: none;
-        }
-        
-        .btn-clear {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-send {
-            background: #17a2b8;
-            color: white;
+        .iframe-container {
+            position: relative;
             width: 100%;
-            margin-bottom: 10px;
+            height: calc(100vh - 130px);
         }
         
-        .btn-back {
-            background: #6c757d;
-            color: white;
+        iframe {
             width: 100%;
-            margin-top: 10px;
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .stats {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .stat-box {
-            flex: 1;
+            height: 100%;
+            border: none;
             background: white;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #0056a3;
-        }
-        
-        .codes-list {
-            background: white;
-            border-radius: 5px;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .code-item {
-            padding: 8px;
-            margin-bottom: 5px;
-            background: #e9ecef;
-            border-radius: 3px;
-            border-left: 4px solid #0056a3;
-            font-family: monospace;
-            word-break: break-all;
-            font-size: 14px;
-        }
-        
-        #notification {
+        .status-bar {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 0;
+            left: 0;
+            right: 0;
             background: #333;
             color: white;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
-            z-index: 1000;
-            max-width: 300px;
+            padding: 10px;
             text-align: center;
-        }
-        
-        .device-info {
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-            margin-top: 15px;
-        }
-        
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        
-        .connection-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .connected {
-            background: #28a745;
-        }
-        
-        .connecting {
-            background: #ffc107;
-        }
-        
-        .disconnected {
-            background: #dc3545;
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-            
-            #reader {
-                height: 250px;
-            }
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <iframe id="corsBypassFrame" sandbox="allow-scripts allow-same-origin" style="display: none;"></iframe>
-    
-    <div id="mainPage" class="page active">
-        <div class="container">
-            <div class="header">
-                <img src="orto.jpg" alt="Orto" class="logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T1JUTzwvdGV4dD48L3N2Zz4=';">
-                <div style="font-size: 16px; color: #666; margin-top: 5px;">Система учёта товара</div>
-            </div>
-            
-            <div class="server-settings">
-                <div class="settings-title">
-                    <span>⚙️</span>
-                    <span>Настройки сервера</span>
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">IP адрес сервера:</label>
-                    <input type="text" id="serverIp" value="10.63.0.249" class="input-field">
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">Порт:</label>
-                    <input type="text" id="serverPort" value="22022" class="input-field">
-                </div>
-                
-                <button id="testConnectionBtn" class="test-btn">🔗 Проверить подключение</button>
-                <div id="connectionTestResult" class="test-result"></div>
-            </div>
-            
-            <div class="page-title">Выберите операцию</div>
-            
-            <div class="main-menu">
-                <button class="menu-btn menu-btn-receipt" data-operation="receipt">📥 Поступление товара</button>
-                <button class="menu-btn menu-btn-shipment" data-operation="shipment">📤 Отгрузка товара</button>
-                <button class="menu-btn menu-btn-inventory" data-operation="inventory">📋 Инвентаризация</button>
-            </div>
-            
-            <div class="device-info">
-                Версия 3.2 • XMLHttpRequest через iframe
-                <div style="margin-top: 5px;">Статус: <span id="connectionStatusMain">Не проверено</span></div>
-            </div>
-        </div>
+    <div class="header">
+        <h1>Клиент для сервера: http://10.63.0.249:22022</h1>
     </div>
     
-    <div id="scannerPage" class="page">
-        <div class="container">
-            <div class="scanner-header">
-                <div id="operationTitle" class="page-title">Сканирование</div>
-                <div style="display: flex; align-items: center;">
-                    <div id="operationBadge" class="operation-badge">Операция</div>
-                    <span class="connection-status" id="connectionStatusScanner">
-                        <span class="connection-dot disconnected"></span>
-                        <span>Нет связи</span>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="error-message" id="errorMessage" style="background: #dc3545; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none;">
-                Ошибка доступа к камере. Разрешите доступ к камере и обновите страницу.
-            </div>
-            
-            <div id="reader"></div>
-            
-            <div class="controls">
-                <button id="startBtn" class="btn btn-start">▶ СТАРТ</button>
-                <button id="stopBtn" class="btn btn-stop">⏹ СТОП</button>
-                <button id="clearBtn" class="btn btn-clear" disabled>🗑 ОЧИСТИТЬ</button>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-value" id="count">0</div>
-                    <div>Кодов отсканировано</div>
-                </div>
-            </div>
-            
-            <div class="codes-list" id="codesList">
-                <div style="text-align: center; color: #999; padding: 20px;">Здесь будут отсканированные коды</div>
-            </div>
-            
-            <button id="sendBtn" class="btn btn-send" disabled>📤 ОТПРАВИТЬ НА СЕРВЕР</button>
-            <button id="backBtn" class="btn btn-back">← НАЗАД В МЕНЮ</button>
-        </div>
+    <div class="controls">
+        <button onclick="loadServer()">🔄 Обновить</button>
+        <button onclick="openInNewTab()">↗️ Новая вкладка</button>
+        <button onclick="showInfo()">ℹ️ Информация</button>
     </div>
     
-    <div id="notification"></div>
+    <div class="iframe-container">
+        <iframe id="serverFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+    </div>
+    
+    <div class="status-bar" id="status">
+        Готов к подключению. Нажмите "Обновить" для загрузки сервера.
+    </div>
 
     <script>
-        const OPERATIONS = {
-            receipt: { name: "Поступление товара", emoji: "📥", code: "RECEIPT" },
-            shipment: { name: "Отгрузка товара", emoji: "📤", code: "SHIPMENT" },
-            inventory: { name: "Инвентаризация", emoji: "📋", code: "INVENTORY" }
-        };
+        const SERVER_URL = 'http://10.63.0.249:22022';
+        let isLoading = false;
         
-        const ORTO_PREFIX = "orto";
-        
-        // ========== CORS BYPASS SYSTEM ==========
-        class CORSBypass {
-            constructor() {
-                this.iframe = document.getElementById('corsBypassFrame');
-                this.messageId = 0;
-                this.callbacks = new Map();
-                this.setupIframe();
-                this.setupMessageListener();
-            }
+        function loadServer() {
+            const iframe = document.getElementById('serverFrame');
+            const status = document.getElementById('status');
             
-            setupIframe() {
-                this.iframe.srcdoc = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <script>
-                            window.addEventListener('message', function(event) {
-                                if (event.data.type === 'httpRequest') {
-                                    const requestId = event.data.id;
-                                    const url = event.data.url;
-                                    const method = event.data.method || 'GET';
-                                    const headers = event.data.headers || {};
-                                    const body = event.data.body;
-                                    
-                                    // Используем XMLHttpRequest вместо fetch (более надежно)
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.open(method, url, true);
-                                    
-                                    // Устанавливаем таймаут
-                                    xhr.timeout = 15000;
-                                    
-                                    // Устанавливаем заголовки
-                                    Object.keys(headers).forEach(key => {
-                                        xhr.setRequestHeader(key, headers[key]);
-                                    });
-                                    
-                                    xhr.onload = function() {
-                                        try {
-                                            window.parent.postMessage({
-                                                type: 'httpResponse',
-                                                id: requestId,
-                                                success: true,
-                                                status: xhr.status,
-                                                statusText: xhr.statusText,
-                                                headers: xhr.getAllResponseHeaders(),
-                                                body: xhr.responseText
-                                            }, '*');
-                                        } catch (e) {
-                                            window.parent.postMessage({
-                                                type: 'httpResponse',
-                                                id: requestId,
-                                                success: false,
-                                                error: 'Failed to parse response: ' + e
-                                            }, '*');
-                                        }
-                                    };
-                                    
-                                    xhr.onerror = function() {
-                                        window.parent.postMessage({
-                                            type: 'httpResponse',
-                                            id: requestId,
-                                            success: false,
-                                            error: 'XHR Network Error'
-                                        }, '*');
-                                    };
-                                    
-                                    xhr.ontimeout = function() {
-                                        window.parent.postMessage({
-                                            type: 'httpResponse',
-                                            id: requestId,
-                                            success: false,
-                                            error: 'Request timeout'
-                                        }, '*');
-                                    };
-                                    
-                                    try {
-                                        xhr.send(body || null);
-                                    } catch (e) {
-                                        window.parent.postMessage({
-                                            type: 'httpResponse',
-                                            id: requestId,
-                                            success: false,
-                                            error: 'Failed to send request: ' + e
-                                        }, '*');
-                                    }
-                                }
-                            });
-                        <\/script>
-                    </head>
-                    <body></body>
-                    </html>
-                `;
-            }
+            status.textContent = 'Загрузка сервера...';
+            status.style.background = '#ff9800';
             
-            setupMessageListener() {
-                window.addEventListener('message', (event) => {
-                    if (event.data.type === 'httpResponse' && this.callbacks.has(event.data.id)) {
-                        const callback = this.callbacks.get(event.data.id);
-                        this.callbacks.delete(event.data.id);
-                        
-                        if (event.data.success) {
-                            callback.resolve({
-                                status: event.data.status,
-                                statusText: event.data.statusText,
-                                headers: this.parseHeaders(event.data.headers),
-                                body: event.data.body,
-                                json: () => {
-                                    try {
-                                        return Promise.resolve(JSON.parse(event.data.body));
-                                    } catch (e) {
-                                        return Promise.reject(new Error('Invalid JSON: ' + e));
-                                    }
-                                },
-                                text: () => Promise.resolve(event.data.body)
-                            });
-                        } else {
-                            callback.reject(new Error(event.data.error));
-                        }
-                    }
-                });
-            }
+            iframe.src = SERVER_URL;
             
-            parseHeaders(headersString) {
-                const headers = new Map();
-                if (headersString) {
-                    const lines = headersString.trim().split(/[\r\n]+/);
-                    lines.forEach(line => {
-                        const parts = line.split(': ');
-                        const header = parts.shift();
-                        const value = parts.join(': ');
-                        if (header) headers.set(header.toLowerCase(), value);
-                    });
-                }
-                return {
-                    get: (name) => headers.get(name.toLowerCase())
-                };
-            }
-            
-            request(url, options = {}) {
-                return new Promise((resolve, reject) => {
-                    const requestId = ++this.messageId;
-                    
-                    this.callbacks.set(requestId, { resolve, reject });
-                    
-                    // Ждем загрузки iframe
-                    if (!this.iframe.contentWindow) {
-                        this.iframe.onload = () => {
-                            this.sendRequest(requestId, url, options, resolve, reject);
-                        };
-                    } else {
-                        this.sendRequest(requestId, url, options, resolve, reject);
-                    }
-                    
-                    setTimeout(() => {
-                        if (this.callbacks.has(requestId)) {
-                            this.callbacks.delete(requestId);
-                            reject(new Error('Request timeout (30s)'));
-                        }
-                    }, 30000);
-                });
-            }
-            
-            sendRequest(requestId, url, options, resolve, reject) {
-                try {
-                    this.iframe.contentWindow.postMessage({
-                        type: 'httpRequest',
-                        id: requestId,
-                        url: url,
-                        method: options.method || 'GET',
-                        headers: options.headers || {},
-                        body: options.body
-                    }, '*');
-                } catch (e) {
-                    this.callbacks.delete(requestId);
-                    reject(new Error('Failed to send to iframe: ' + e));
-                }
-            }
-            
-            get(url, options = {}) {
-                return this.request(url, { ...options, method: 'GET' });
-            }
-            
-            post(url, data, options = {}) {
-                const headers = {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                };
-                
-                return this.request(url, {
-                    ...options,
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(data)
-                });
-            }
-        }
-        
-        // ========== APP STATE ==========
-        let currentOperation = null;
-        let scanner = null;
-        let scannedCodes = [];
-        let isScanning = false;
-        let deviceId = null;
-        let corsBypass = null;
-        
-        const pages = {
-            main: document.getElementById('mainPage'),
-            scanner: document.getElementById('scannerPage')
-        };
-        
-        const elements = {
-            startBtn: document.getElementById('startBtn'),
-            stopBtn: document.getElementById('stopBtn'),
-            clearBtn: document.getElementById('clearBtn'),
-            sendBtn: document.getElementById('sendBtn'),
-            backBtn: document.getElementById('backBtn'),
-            codesList: document.getElementById('codesList'),
-            count: document.getElementById('count'),
-            operationTitle: document.getElementById('operationTitle'),
-            operationBadge: document.getElementById('operationBadge'),
-            notification: document.getElementById('notification'),
-            errorMessage: document.getElementById('errorMessage'),
-            connectionStatusMain: document.getElementById('connectionStatusMain'),
-            connectionStatusScanner: document.getElementById('connectionStatusScanner'),
-            serverIp: document.getElementById('serverIp'),
-            serverPort: document.getElementById('serverPort'),
-            testConnectionBtn: document.getElementById('testConnectionBtn'),
-            connectionTestResult: document.getElementById('connectionTestResult')
-        };
-        
-        // ========== UTILITY FUNCTIONS ==========
-        function getServerConfig() {
-            const ip = elements.serverIp?.value || "10.63.0.249";
-            const port = parseInt(elements.serverPort?.value || "22022");
-            return { host: ip, port: port, url: `http://${ip}:${port}` };
-        }
-        
-        function updateConnectionStatus(status, updateBoth = false) {
-            const statusTexts = {
-                'connected': { text: 'Подключен', color: '#28a745', dot: 'connected' },
-                'connecting': { text: 'Подключение...', color: '#ffc107', dot: 'connecting' },
-                'disconnected': { text: 'Нет связи', color: '#dc3545', dot: 'disconnected' }
+            // Слушаем события загрузки
+            iframe.onload = function() {
+                status.textContent = 'Сервер загружен успешно';
+                status.style.background = '#4caf50';
+                isLoading = false;
             };
             
-            const statusInfo = statusTexts[status] || statusTexts.disconnected;
-            
-            if (updateBoth || pages.main.classList.contains('active')) {
-                elements.connectionStatusMain.textContent = statusInfo.text;
-                elements.connectionStatusMain.style.color = statusInfo.color;
-            }
-            
-            if (updateBoth || pages.scanner.classList.contains('active')) {
-                const scannerStatus = elements.connectionStatusScanner;
-                scannerStatus.querySelector('.connection-dot').className = `connection-dot ${statusInfo.dot}`;
-                scannerStatus.querySelector('span:last-child').textContent = statusInfo.text;
-            }
-        }
-        
-        async function testServerConnection() {
-            const config = getServerConfig();
-            const result = elements.connectionTestResult;
-            
-            result.style.display = 'block';
-            result.innerHTML = '🔄 Проверяю через iframe...';
-            result.style.background = '#fff3cd';
-            result.style.color = '#856404';
-            
-            try {
-                updateConnectionStatus('connecting', true);
+            iframe.onerror = function() {
+                status.textContent = 'Ошибка загрузки сервера';
+                status.style.background = '#f44336';
+                isLoading = false;
                 
-                const response = await corsBypass.get(config.url, { timeout: 10000 });
-                
-                if (response.status === 200) {
-                    result.innerHTML = '✅ Сервер доступен!';
-                    result.style.background = '#d4edda';
-                    result.style.color = '#155724';
-                    updateConnectionStatus('connected', true);
-                    showNotification('Сервер подключен через iframe', 'success', 3000);
-                    return true;
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // Предлагаем открыть в новой вкладке
+                if (confirm('Не удалось загрузить сервер во фрейме. Открыть в новой вкладке?')) {
+                    openInNewTab();
                 }
-            } catch (error) {
-                result.innerHTML = `❌ Ошибка: ${error.message}`;
-                result.style.background = '#f8d7da';
-                result.style.color = '#721c24';
-                updateConnectionStatus('disconnected', true);
-                showNotification('Не удалось подключиться: ' + error.message, 'error', 4000);
-                return false;
-            }
-        }
-        
-        function showPage(pageName) {
-            Object.values(pages).forEach(page => page.classList.remove('active'));
-            if (pages[pageName]) pages[pageName].classList.add('active');
-            if (pageName === 'main' && isScanning) stopScanner();
-        }
-        
-        function setOperation(operationKey) {
-            if (!OPERATIONS[operationKey]) return;
-            currentOperation = operationKey;
-            elements.operationTitle.textContent = OPERATIONS[operationKey].name;
-            elements.operationBadge.textContent = OPERATIONS[operationKey].name;
-            showPage('scanner');
-            loadSavedData();
-        }
-        
-        function generateDeviceId() {
-            let id = localStorage.getItem('orto_device_id');
-            if (!id) {
-                id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('orto_device_id', id);
-            }
-            return id;
-        }
-        
-        function loadSavedData() {
-            const saved = localStorage.getItem(`orto_codes_${currentOperation}`);
-            scannedCodes = saved ? JSON.parse(saved) : [];
-            updateUI();
-            if (scannedCodes.length > 0) showNotification('Загружено: ' + scannedCodes.length + ' кодов', 'info');
-        }
-        
-        function saveData() {
-            localStorage.setItem(`orto_codes_${currentOperation}`, JSON.stringify(scannedCodes));
-        }
-        
-        function updateUI() {
-            elements.count.textContent = scannedCodes.length;
-            elements.clearBtn.disabled = scannedCodes.length === 0;
-            elements.sendBtn.disabled = scannedCodes.length === 0;
+            };
             
-            if (scannedCodes.length > 0) {
-                let html = '';
-                scannedCodes.slice(-10).reverse().forEach((code, index) => {
-                    html += `<div class="code-item">${scannedCodes.length - index}. ${code}</div>`;
-                });
-                elements.codesList.innerHTML = html;
-            } else {
-                elements.codesList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Здесь будут отсканированные коды</div>';
-            }
-        }
-        
-        function showNotification(message, type = 'info', duration = 3000) {
-            elements.notification.textContent = message;
-            elements.notification.style.background = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
-            elements.notification.style.display = 'block';
-            setTimeout(() => { elements.notification.style.display = 'none'; }, duration);
-        }
-        
-        function playBeep(type = 'success') {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = type === 'success' ? 800 : 400;
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.15);
-            } catch (e) {}
-        }
-        
-        // ========== SCANNER FUNCTIONS ==========
-        async function startScanner() {
-            if (isScanning || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                elements.errorMessage.style.display = 'block';
-                return;
-            }
-            
-            elements.errorMessage.style.display = 'none';
-            
-            try {
-                scanner = new Html5Qrcode("reader");
-                await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, handleScan);
-                isScanning = true;
-                elements.startBtn.style.display = 'none';
-                elements.stopBtn.style.display = 'block';
-                showNotification('Сканер запущен', 'success');
-            } catch (error) {
-                console.error('Ошибка камеры:', error);
-                showNotification('Не удалось запустить камеру', 'error');
-            }
-        }
-        
-        function handleScan(decodedText) {
-            const code = decodedText.trim();
-            if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                playBeep('error');
-                showNotification('❌ Неверный код', 'error');
-                return;
-            }
-            if (scannedCodes.includes(code)) {
-                playBeep('error');
-                showNotification('⚠️ Код уже отсканирован', 'warning');
-                return;
-            }
-            playBeep('success');
-            scannedCodes.push(code);
-            saveData();
-            updateUI();
-            showNotification('✅ Код добавлен', 'success');
-        }
-        
-        async function stopScanner() {
-            if (scanner && isScanning) {
-                try {
-                    await scanner.stop();
-                    isScanning = false;
-                    elements.startBtn.style.display = 'block';
-                    elements.stopBtn.style.display = 'none';
-                    showNotification('Сканирование остановлено', 'warning');
-                } catch (error) {
-                    console.error('Ошибка остановки:', error);
+            // Таймаут на случай долгой загрузки
+            setTimeout(() => {
+                if (isLoading) {
+                    status.textContent = 'Загрузка занимает больше времени чем обычно...';
+                    status.style.background = '#ff9800';
                 }
-            }
+            }, 5000);
         }
         
-        function clearCodes() {
-            if (scannedCodes.length === 0) return;
-            const count = scannedCodes.length;
-            scannedCodes = [];
-            localStorage.removeItem(`orto_codes_${currentOperation}`);
-            updateUI();
-            showNotification(`🗑️ Очищено ${count} кодов`, 'warning');
+        function openInNewTab() {
+            window.open(SERVER_URL, '_blank');
         }
         
-        // ========== SEND DATA ==========
-        async function sendToServer() {
-            if (scannedCodes.length === 0 || !currentOperation) {
-                showNotification('Нет данных для отправки', 'error');
-                return;
-            }
-            
-            try {
-                elements.sendBtn.disabled = true;
-                elements.sendBtn.textContent = '📤 ОТПРАВКА...';
-                
-                const data = {
-                    operation: OPERATIONS[currentOperation].code,
-                    operationName: OPERATIONS[currentOperation].name,
-                    deviceId: deviceId,
-                    timestamp: new Date().toISOString(),
-                    codes: scannedCodes,
-                    totalCount: scannedCodes.length,
-                    deviceInfo: {
-                        platform: navigator.platform,
-                        userAgent: navigator.userAgent.substring(0, 100),
-                        screenResolution: `${window.screen.width}x${window.screen.height}`,
-                        language: navigator.language
-                    }
-                };
-                
-                updateConnectionStatus('connecting');
-                
-                const config = getServerConfig();
-                const response = await corsBypass.post(config.url, data, { timeout: 15000 });
-                
-                if (response.status >= 200 && response.status < 300) {
-                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success', 4000);
-                    updateConnectionStatus('connected');
-                    
-                    // Показываем ответ сервера в консоли
-                    try {
-                        const serverResponse = await response.json();
-                        console.log('Ответ сервера:', serverResponse);
-                    } catch (e) {
-                        console.log('Ответ сервера (текст):', response.body);
-                    }
-                    
-                    // Очищаем через секунду
-                    setTimeout(clearCodes, 1000);
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-            } catch (error) {
-                console.error('Ошибка отправки:', error);
-                showNotification(`❌ Ошибка: ${error.message}`, 'error', 4000);
-                updateConnectionStatus('disconnected');
-                saveData(); // Сохраняем для повторной отправки
-            } finally {
-                elements.sendBtn.disabled = false;
-                elements.sendBtn.textContent = '📤 ОТПРАВИТЬ НА СЕРВЕР';
-            }
+        function showInfo() {
+            alert(`Сервер: ${SERVER_URL}\n\n` +
+                  `Если сервер не загружается:\n` +
+                  `1. Проверьте, запущен ли сервер\n` +
+                  `2. Убедитесь, что вы в той же сети, что и сервер\n` +
+                  `3. Попробуйте открыть в новой вкладке`);
         }
         
-        // ========== INITIALIZATION ==========
-        function init() {
-            deviceId = generateDeviceId();
-            corsBypass = new CORSBypass();
-            
-            // Event listeners
-            document.querySelectorAll('.menu-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => setOperation(e.currentTarget.dataset.operation));
-            });
-            
-            elements.startBtn.addEventListener('click', startScanner);
-            elements.stopBtn.addEventListener('click', stopScanner);
-            elements.clearBtn.addEventListener('click', clearCodes);
-            elements.sendBtn.addEventListener('click', sendToServer);
-            elements.backBtn.addEventListener('click', () => showPage('main'));
-            elements.testConnectionBtn.addEventListener('click', testServerConnection);
-            
-            console.log('Orto Scanner 3.2 готов. ID устройства:', deviceId);
-        }
-        
-        document.addEventListener('DOMContentLoaded', init);
+        // Автоматическая загрузка при открытии страницы
+        window.onload = function() {
+            loadServer();
+        };
     </script>
 </body>
 </html>
