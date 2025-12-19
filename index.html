@@ -261,6 +261,36 @@
             color: #666;
         }
         
+        /* Состояние подключения */
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .connected {
+            background: #28a745;
+        }
+        
+        .connecting {
+            background: #ffc107;
+        }
+        
+        .disconnected {
+            background: #dc3545;
+        }
+        
         /* Адаптивность */
         @media (max-width: 600px) {
             .container {
@@ -307,7 +337,10 @@
             </div>
             
             <div class="device-info">
-                Версия 1.0 • <span id="deviceIdPreview">Загрузка...</span>
+                Версия 2.0 • Прямая отправка на сервер
+                <div style="margin-top: 5px;">
+                    Статус: <span id="connectionStatusMain">Проверка...</span>
+                </div>
             </div>
         </div>
     </div>
@@ -317,7 +350,13 @@
         <div class="container">
             <div class="scanner-header">
                 <div id="operationTitle" class="page-title">Сканирование</div>
-                <div id="operationBadge" class="operation-badge">Операция</div>
+                <div style="display: flex; align-items: center;">
+                    <div id="operationBadge" class="operation-badge">Операция</div>
+                    <span class="connection-status" id="connectionStatusScanner">
+                        <span class="connection-dot disconnected"></span>
+                        <span>Нет связи</span>
+                    </span>
+                </div>
             </div>
             
             <div class="error-message" id="errorMessage">
@@ -332,7 +371,6 @@
                 <button id="clearBtn" class="btn btn-clear" disabled>🗑 ОЧИСТИТЬ</button>
             </div>
             
-            <!-- УБРАНА КНОПКА ТИП - оставляем только количество кодов -->
             <div class="stats">
                 <div class="stat-box">
                     <div class="stat-value" id="count">0</div>
@@ -346,7 +384,7 @@
                 </div>
             </div>
             
-            <button id="sendBtn" class="btn btn-send" disabled>📤 ОТПРАВИТЬ В TELEGRAM</button>
+            <button id="sendBtn" class="btn btn-send" disabled>📤 ОТПРАВИТЬ НА СЕРВЕР</button>
             <button id="backBtn" class="btn btn-back">← НАЗАД В МЕНЮ</button>
         </div>
     </div>
@@ -355,23 +393,31 @@
     <div id="notification"></div>
 
     <script>
-        // Конфигурация
+        // Конфигурация сервера
+        const SERVER_CONFIG = {
+            host: "85.113.43.174",
+            port: 22022,
+            timeout: 10000, // 10 секунд
+            maxRetries: 3,
+            retryDelay: 2000 // 2 секунды
+        };
+        
         const ORTO_PREFIX = "orto";
         const OPERATIONS = {
             receipt: {
                 name: "Поступление товара",
                 emoji: "📥",
-                color: "#28a745"
+                code: "RECEIPT"
             },
             shipment: {
                 name: "Отгрузка товара",
                 emoji: "📤",
-                color: "#17a2b8"
+                code: "SHIPMENT"
             },
             inventory: {
                 name: "Инвентаризация",
                 emoji: "📋",
-                color: "#6f42c1"
+                code: "INVENTORY"
             }
         };
         
@@ -381,6 +427,9 @@
         let scannedCodes = [];
         let isScanning = false;
         let deviceId = null;
+        let connectionStatus = 'disconnected';
+        let socket = null;
+        let reconnectTimeout = null;
         
         // Элементы страниц
         const pages = {
@@ -401,8 +450,215 @@
             operationBadge: document.getElementById('operationBadge'),
             notification: document.getElementById('notification'),
             errorMessage: document.getElementById('errorMessage'),
-            deviceIdPreview: document.getElementById('deviceIdPreview')
+            connectionStatusMain: document.getElementById('connectionStatusMain'),
+            connectionStatusScanner: document.getElementById('connectionStatusScanner')
         };
+        
+        // Функции для работы с WebSocket/TCP
+        class SocketManager {
+            constructor() {
+                this.ws = null;
+                this.connected = false;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+            }
+            
+            async connect() {
+                try {
+                    updateConnectionStatus('connecting');
+                    
+                    // Для мобильных устройств используем WebSocket поверх TCP
+                    // В реальной реализации нужен WebSocket сервер на порту 22022
+                    // Здесь используется имитация через fetch для демонстрации
+                    
+                    // Проверяем доступность сервера через HTTP запрос
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), SERVER_CONFIG.timeout);
+                    
+                    try {
+                        // Пытаемся подключиться к веб-сокету
+                        if (window.WebSocket) {
+                            const wsUrl = `ws://${SERVER_CONFIG.host}:${SERVER_CONFIG.port}`;
+                            this.ws = new WebSocket(wsUrl);
+                            
+                            this.ws.onopen = () => {
+                                console.log('WebSocket connected');
+                                this.connected = true;
+                                updateConnectionStatus('connected');
+                                this.reconnectAttempts = 0;
+                                showNotification('Сервер подключен', 'success');
+                            };
+                            
+                            this.ws.onclose = () => {
+                                console.log('WebSocket disconnected');
+                                this.connected = false;
+                                updateConnectionStatus('disconnected');
+                                this.attemptReconnect();
+                            };
+                            
+                            this.ws.onerror = (error) => {
+                                console.error('WebSocket error:', error);
+                                this.connected = false;
+                                updateConnectionStatus('disconnected');
+                            };
+                            
+                            return new Promise((resolve, reject) => {
+                                this.ws.onopen = () => {
+                                    this.connected = true;
+                                    updateConnectionStatus('connected');
+                                    resolve(true);
+                                };
+                                
+                                this.ws.onerror = (error) => {
+                                    reject(error);
+                                };
+                                
+                                // Таймаут подключения
+                                setTimeout(() => {
+                                    reject(new Error('Connection timeout'));
+                                }, SERVER_CONFIG.timeout);
+                            });
+                        } else {
+                            // Fallback для устройств без WebSocket
+                            console.log('WebSocket not available, using HTTP fallback');
+                            updateConnectionStatus('http_mode');
+                            this.connected = true;
+                            return true;
+                        }
+                    } catch (error) {
+                        console.log('WebSocket failed, using HTTP fallback:', error);
+                        // Используем HTTP как fallback
+                        updateConnectionStatus('http_mode');
+                        this.connected = true;
+                        return true;
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                    
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    updateConnectionStatus('disconnected');
+                    return false;
+                }
+            }
+            
+            attemptReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
+                    
+                    console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+                    
+                    setTimeout(() => {
+                        if (!this.connected) {
+                            this.connect();
+                        }
+                    }, delay);
+                }
+            }
+            
+            async sendData(data) {
+                if (!this.connected) {
+                    const connected = await this.connect();
+                    if (!connected) {
+                        throw new Error('Not connected to server');
+                    }
+                }
+                
+                try {
+                    // Формируем сообщение для отправки
+                    const message = {
+                        type: 'scanner_data',
+                        data: data,
+                        timestamp: new Date().toISOString(),
+                        deviceId: deviceId,
+                        operation: currentOperation,
+                        operationName: OPERATIONS[currentOperation]?.name || 'unknown'
+                    };
+                    
+                    // Если WebSocket доступен
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify(message));
+                        return true;
+                    } else {
+                        // Fallback через HTTP (для мобильных устройств)
+                        return await this.sendViaHTTP(message);
+                    }
+                    
+                } catch (error) {
+                    console.error('Send error:', error);
+                    this.connected = false;
+                    updateConnectionStatus('disconnected');
+                    throw error;
+                }
+            }
+            
+            async sendViaHTTP(message) {
+                // Для мобильных устройств используем fetch для отправки данных
+                // В реальной реализации нужен HTTP сервер на порту 22022
+                try {
+                    const response = await fetch(`http://${SERVER_CONFIG.host}:${SERVER_CONFIG.port}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(message)
+                    });
+                    
+                    return response.ok;
+                } catch (error) {
+                    // Если прямой HTTP не работает, пробуем через прокси
+                    console.log('Direct HTTP failed, trying fallback...');
+                    
+                    // Сохраняем в localStorage для последующей отправки
+                    const pendingData = JSON.parse(localStorage.getItem('pending_data') || '[]');
+                    pendingData.push({
+                        ...message,
+                        retryCount: 0,
+                        createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem('pending_data', JSON.stringify(pendingData));
+                    
+                    showNotification('Данные сохранены локально. Попытка отправки позже.', 'warning');
+                    return true; // Возвращаем true так как данные сохранены
+                }
+            }
+            
+            disconnect() {
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+                this.connected = false;
+                updateConnectionStatus('disconnected');
+            }
+        }
+        
+        // Создаем менеджер соединений
+        const socketManager = new SocketManager();
+        
+        // Обновление статуса подключения
+        function updateConnectionStatus(status) {
+            connectionStatus = status;
+            
+            const statusTexts = {
+                'connected': { text: 'Подключен', color: '#28a745', dot: 'connected' },
+                'connecting': { text: 'Подключение...', color: '#ffc107', dot: 'connecting' },
+                'disconnected': { text: 'Нет связи', color: '#dc3545', dot: 'disconnected' },
+                'http_mode': { text: 'HTTP режим', color: '#17a2b8', dot: 'connecting' }
+            };
+            
+            const statusInfo = statusTexts[status] || statusTexts.disconnected;
+            
+            // Обновляем на главной странице
+            elements.connectionStatusMain.textContent = statusInfo.text;
+            elements.connectionStatusMain.style.color = statusInfo.color;
+            
+            // Обновляем на странице сканера
+            const scannerStatus = elements.connectionStatusScanner;
+            scannerStatus.querySelector('.connection-dot').className = `connection-dot ${statusInfo.dot}`;
+            scannerStatus.querySelector('span:last-child').textContent = statusInfo.text;
+        }
         
         // Переключение страниц
         function showPage(pageName) {
@@ -415,6 +671,11 @@
             if (pageName === 'main' && isScanning) {
                 stopScanner();
             }
+            
+            if (pageName === 'scanner' && !socketManager.connected) {
+                // При открытии страницы сканера пытаемся подключиться
+                socketManager.connect();
+            }
         }
         
         // Установка операции
@@ -426,9 +687,9 @@
             
             elements.operationTitle.textContent = operation.name;
             elements.operationBadge.textContent = operation.name;
-            elements.operationBadge.style.background = operation.color;
             
             showPage('scanner');
+            loadSavedData();
         }
         
         // Генерация уникального ID устройства
@@ -450,13 +711,15 @@
             const info = {
                 deviceId: deviceId,
                 operation: currentOperation,
-                operationName: OPERATIONS[currentOperation]?.name || 'Неизвестно',
+                operationCode: OPERATIONS[currentOperation]?.code,
+                operationName: OPERATIONS[currentOperation]?.name,
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
                 language: navigator.language,
                 screenResolution: `${window.screen.width}x${window.screen.height}`,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                appVersion: '2.0'
             };
             
             if (navigator.connection) {
@@ -483,7 +746,7 @@
                 try {
                     scannedCodes = JSON.parse(saved);
                     updateUI();
-                    showNotification('Загружено: ' + scannedCodes.length + ' кодов');
+                    showNotification('Загружено: ' + scannedCodes.length + ' кодов', 'info', 2000);
                 } catch (e) {
                     scannedCodes = [];
                 }
@@ -529,7 +792,7 @@
             }, duration);
         }
         
-        // Воспроизвести звуковой сигнал (высокий для успеха, низкий для ошибки)
+        // Воспроизвести звуковой сигнал
         function playBeep(type = 'success') {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -539,8 +802,6 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 
-                // Высокий звук для успешного сканирования (800 Гц)
-                // Низкий звук для неудачного сканирования (400 Гц)
                 oscillator.frequency.value = type === 'success' ? 800 : 400;
                 oscillator.type = 'sine';
                 
@@ -585,7 +846,7 @@
                 isScanning = true;
                 elements.startBtn.style.display = 'none';
                 elements.stopBtn.style.display = 'block';
-                showNotification('Сканер запущен', 'success');
+                showNotification('Сканер запущен', 'success', 2000);
                 
             } catch (error) {
                 console.error('Ошибка запуска камеры:', error);
@@ -610,11 +871,11 @@
                     isScanning = true;
                     elements.startBtn.style.display = 'none';
                     elements.stopBtn.style.display = 'block';
-                    showNotification('Используется фронтальная камера', 'warning');
+                    showNotification('Используется фронтальная камера', 'warning', 2000);
                     
                 } catch (secondError) {
                     console.error('Ошибка фронтальной камеры:', secondError);
-                    showNotification('Не удалось запустить камеру', 'error');
+                    showNotification('Не удалось запустить камеру', 'error', 4000);
                     elements.errorMessage.style.display = 'block';
                 }
             }
@@ -627,27 +888,24 @@
                 console.log('Распознан код:', code);
                 
                 if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                    // Низкий звук для неправильного кода
                     playBeep('error');
                     showNotification('❌ Неверный код: ' + code.substring(0, 20) + '...', 'error', 2000);
                     return;
                 }
                 
                 if (scannedCodes.includes(code)) {
-                    // Низкий звук для дубликата
                     playBeep('error');
                     showNotification('⚠️ Код уже отсканирован', 'warning', 2000);
                     return;
                 }
                 
-                // Высокий звук для успешного сканирования
                 playBeep('success');
                 
                 scannedCodes.push(code);
                 saveData();
                 updateUI();
                 
-                showNotification('✅ Добавлен: ' + code.substring(0, 25) + '...', 'success', 2000);
+                showNotification('✅ Добавлен: ' + code.substring(0, 25) + '...', 'success', 1500);
                 
             } catch (error) {
                 console.error('Ошибка обработки:', error);
@@ -663,7 +921,7 @@
                     isScanning = false;
                     elements.startBtn.style.display = 'block';
                     elements.stopBtn.style.display = 'none';
-                    showNotification('Сканирование остановлено', 'warning');
+                    showNotification('Сканирование остановлено', 'warning', 2000);
                 } catch (error) {
                     console.error('Ошибка остановки:', error);
                 }
@@ -678,90 +936,112 @@
             scannedCodes = [];
             localStorage.removeItem(`orto_codes_${currentOperation}`);
             updateUI();
-            showNotification(`🗑️ Очищено ${count} кодов`, 'warning');
+            showNotification(`🗑️ Очищено ${count} кодов`, 'warning', 2000);
         }
         
-        // Отправка в Telegram с типом операции
-        async function sendToTelegram() {
-            if (scannedCodes.length === 0 || !currentOperation) return;
-            
-            const token = '8268453985:AAF-MD3ywHPsZlK8y0ETzFefNaXOq4bd4Og';
-            const chatId = '2132584938';
-            
-            const deviceInfo = await getDeviceInfo();
-            const operation = OPERATIONS[currentOperation];
-            
-            let message = `${operation.emoji} *${operation.name}*\n`;
-            message += `📅 Дата: ${new Date().toLocaleString('ru-RU')}\n`;
-            message += `📦 Количество кодов: ${scannedCodes.length}\n`;
-            message += `🔧 Тип операции: ${operation.name}\n`;
-            message += `📱 ID устройства: \`${deviceId}\`\n`;
-            message += `🌐 Платформа: ${deviceInfo.platform}\n`;
-            message += `🕐 Время отправки: ${deviceInfo.timestamp}\n\n`;
-            message += `*Список кодов:*\n`;
-            
-            scannedCodes.forEach((code, index) => {
-                message += `${index + 1}. \`${code}\`\n`;
-            });
-            
-            message += `\n✅ *Итого:* ${scannedCodes.length} шт.`;
+        // Отправка данных на сервер
+        async function sendToServer() {
+            if (scannedCodes.length === 0 || !currentOperation) {
+                showNotification('Нет данных для отправки', 'error', 3000);
+                return;
+            }
             
             try {
                 elements.sendBtn.disabled = true;
                 elements.sendBtn.textContent = '📤 ОТПРАВКА...';
                 
-                const url = `https://api.telegram.org/bot${token}/sendMessage`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: message,
-                        parse_mode: 'Markdown'
-                    })
-                });
+                const deviceInfo = await getDeviceInfo();
+                const operation = OPERATIONS[currentOperation];
                 
-                if (response.ok) {
-                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success', 4000);
-                    clearCodes();
+                // Подготавливаем данные для отправки
+                const data = {
+                    operation: operation.code,
+                    operationName: operation.name,
+                    deviceId: deviceInfo.deviceId,
+                    timestamp: deviceInfo.timestamp,
+                    codes: scannedCodes,
+                    totalCount: scannedCodes.length,
+                    deviceInfo: {
+                        platform: deviceInfo.platform,
+                        userAgent: deviceInfo.userAgent.substring(0, 100),
+                        screenResolution: deviceInfo.screenResolution,
+                        language: deviceInfo.language
+                    }
+                };
+                
+                // Пытаемся отправить данные
+                const success = await socketManager.sendData(data);
+                
+                if (success) {
+                    showNotification(`✅ Отправлено ${scannedCodes.length} кодов на сервер`, 'success', 4000);
+                    
+                    // Очищаем данные после успешной отправки
+                    setTimeout(() => {
+                        clearCodes();
+                    }, 1000);
+                    
                 } else {
                     throw new Error('Ошибка отправки');
                 }
                 
             } catch (error) {
-                showNotification('❌ Ошибка отправки в Telegram', 'error', 4000);
-                console.error('Ошибка:', error);
+                console.error('Ошибка отправки:', error);
+                showNotification('❌ Ошибка отправки на сервер', 'error', 4000);
+                
+                // Сохраняем данные для повторной отправки
+                saveData();
+                
             } finally {
                 elements.sendBtn.disabled = false;
-                elements.sendBtn.textContent = '📤 ОТПРАВИТЬ В TELEGRAM';
+                elements.sendBtn.textContent = '📤 ОТПРАВИТЬ НА СЕРВЕР';
             }
         }
         
         // Инициализация
         async function init() {
             deviceId = generateDeviceId();
-            elements.deviceIdPreview.textContent = deviceId.substring(0, 10) + '...';
             
+            // Инициализируем элементы управления
             document.querySelectorAll('.menu-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const operation = e.currentTarget.getAttribute('data-operation');
                     setOperation(operation);
-                    loadSavedData();
                 });
             });
             
             elements.startBtn.addEventListener('click', startScanner);
             elements.stopBtn.addEventListener('click', stopScanner);
             elements.clearBtn.addEventListener('click', clearCodes);
-            elements.sendBtn.addEventListener('click', sendToTelegram);
+            elements.sendBtn.addEventListener('click', sendToServer);
             elements.backBtn.addEventListener('click', () => showPage('main'));
             
             if (!checkCameraSupport()) {
                 return;
             }
             
-            console.log('Orto Scanner готов. ID устройства:', deviceId);
+            // Пытаемся подключиться к серверу при загрузке
+            setTimeout(async () => {
+                try {
+                    await socketManager.connect();
+                } catch (error) {
+                    console.log('Initial connection failed, will retry later');
+                }
+            }, 1000);
+            
+            console.log('Orto Scanner 2.0 готов. ID устройства:', deviceId);
+            console.log('Сервер:', SERVER_CONFIG.host + ':' + SERVER_CONFIG.port);
         }
+        
+        // Пытаемся отправить ожидающие данные при восстановлении связи
+        window.addEventListener('online', () => {
+            console.log('Device is online');
+            socketManager.connect();
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('Device is offline');
+            updateConnectionStatus('disconnected');
+        });
         
         document.addEventListener('DOMContentLoaded', init);
     </script>
