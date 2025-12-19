@@ -6,7 +6,6 @@
     <title>Orto Scanner</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* Общие стили */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -36,7 +35,6 @@
             to { opacity: 1; }
         }
         
-        /* Шапка */
         .header {
             text-align: center;
             margin-bottom: 30px;
@@ -56,7 +54,6 @@
             text-align: center;
         }
         
-        /* Настройки сервера */
         .server-settings {
             background: white;
             padding: 15px;
@@ -114,7 +111,6 @@
             display: none;
         }
         
-        /* Главная страница */
         .main-menu {
             display: flex;
             flex-direction: column;
@@ -149,7 +145,6 @@
             color: white;
         }
         
-        /* Страница сканера */
         #reader {
             width: 100%;
             height: 280px;
@@ -293,7 +288,6 @@
             margin-top: 15px;
         }
         
-        /* Состояние подключения */
         .connection-status {
             display: inline-flex;
             align-items: center;
@@ -323,7 +317,6 @@
             background: #dc3545;
         }
         
-        /* Адаптивность */
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -336,22 +329,15 @@
     </style>
 </head>
 <body>
-    <!-- Скрытый iframe для обхода CORS -->
-    <iframe id="corsBypassFrame" 
-            sandbox="allow-scripts allow-same-origin" 
-            style="display: none; width: 0; height: 0; border: none;">
-    </iframe>
+    <iframe id="corsBypassFrame" sandbox="allow-scripts allow-same-origin" style="display: none;"></iframe>
     
-    <!-- Главная страница -->
     <div id="mainPage" class="page active">
         <div class="container">
             <div class="header">
-                <img src="orto.jpg" alt="Orto" class="logo" 
-                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T1JUTzwvdGV4dD48L3N2Zz4=';">
+                <img src="orto.jpg" alt="Orto" class="logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB2aWV3Qm94PSIwIDAgMTUwIDUwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iNTAiIGZpbGw9IiMwMDU2YTMiLz48dGV4dCB4PSI3NSIgeT0iMzIiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T1JUTzwvdGV4dD48L3N2Zz4=';">
                 <div style="font-size: 16px; color: #666; margin-top: 5px;">Система учёта товара</div>
             </div>
             
-            <!-- Настройки сервера -->
             <div class="server-settings">
                 <div class="settings-title">
                     <span>⚙️</span>
@@ -368,42 +354,25 @@
                     <input type="text" id="serverPort" value="22022" class="input-field">
                 </div>
                 
-                <button id="testConnectionBtn" class="test-btn">
-                    🔗 Проверить подключение
-                </button>
-                
+                <button id="testConnectionBtn" class="test-btn">🔗 Проверить подключение</button>
                 <div id="connectionTestResult" class="test-result"></div>
             </div>
             
             <div class="page-title">Выберите операцию</div>
             
             <div class="main-menu">
-                <button class="menu-btn menu-btn-receipt" data-operation="receipt">
-                    <span>📥</span>
-                    <span>Поступление товара</span>
-                </button>
-                
-                <button class="menu-btn menu-btn-shipment" data-operation="shipment">
-                    <span>📤</span>
-                    <span>Отгрузка товара</span>
-                </button>
-                
-                <button class="menu-btn menu-btn-inventory" data-operation="inventory">
-                    <span>📋</span>
-                    <span>Инвентаризация</span>
-                </button>
+                <button class="menu-btn menu-btn-receipt" data-operation="receipt">📥 Поступление товара</button>
+                <button class="menu-btn menu-btn-shipment" data-operation="shipment">📤 Отгрузка товара</button>
+                <button class="menu-btn menu-btn-inventory" data-operation="inventory">📋 Инвентаризация</button>
             </div>
             
             <div class="device-info">
-                Версия 3.1 • CORS обход через iframe
-                <div style="margin-top: 5px;">
-                    Статус: <span id="connectionStatusMain">Не проверено</span>
-                </div>
+                Версия 3.2 • XMLHttpRequest через iframe
+                <div style="margin-top: 5px;">Статус: <span id="connectionStatusMain">Не проверено</span></div>
             </div>
         </div>
     </div>
     
-    <!-- Страница сканирования -->
     <div id="scannerPage" class="page">
         <div class="container">
             <div class="scanner-header">
@@ -417,7 +386,7 @@
                 </div>
             </div>
             
-            <div class="error-message" id="errorMessage">
+            <div class="error-message" id="errorMessage" style="background: #dc3545; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: none;">
                 Ошибка доступа к камере. Разрешите доступ к камере и обновите страницу.
             </div>
             
@@ -437,9 +406,7 @@
             </div>
             
             <div class="codes-list" id="codesList">
-                <div style="text-align: center; color: #999; padding: 20px;">
-                    Здесь будут отсканированные коды
-                </div>
+                <div style="text-align: center; color: #999; padding: 20px;">Здесь будут отсканированные коды</div>
             </div>
             
             <button id="sendBtn" class="btn btn-send" disabled>📤 ОТПРАВИТЬ НА СЕРВЕР</button>
@@ -447,32 +414,18 @@
         </div>
     </div>
     
-    <!-- Уведомление -->
     <div id="notification"></div>
 
     <script>
-        // ========== КОНФИГУРАЦИЯ ==========
         const OPERATIONS = {
-            receipt: {
-                name: "Поступление товара",
-                emoji: "📥",
-                code: "RECEIPT"
-            },
-            shipment: {
-                name: "Отгрузка товара",
-                emoji: "📤",
-                code: "SHIPMENT"
-            },
-            inventory: {
-                name: "Инвентаризация",
-                emoji: "📋",
-                code: "INVENTORY"
-            }
+            receipt: { name: "Поступление товара", emoji: "📥", code: "RECEIPT" },
+            shipment: { name: "Отгрузка товара", emoji: "📤", code: "SHIPMENT" },
+            inventory: { name: "Инвентаризация", emoji: "📋", code: "INVENTORY" }
         };
         
         const ORTO_PREFIX = "orto";
         
-        // ========== СИСТЕМА ОБХОДА CORS ЧЕРЕЗ IFRAME ==========
+        // ========== CORS BYPASS SYSTEM ==========
         class CORSBypass {
             constructor() {
                 this.iframe = document.getElementById('corsBypassFrame');
@@ -483,15 +436,13 @@
             }
             
             setupIframe() {
-                // Устанавливаем содержимое iframe
                 this.iframe.srcdoc = `
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <meta charset="UTF-8">
                         <script>
-                            // Обработчик сообщений от родительского окна
-                            window.addEventListener('message', async function(event) {
+                            window.addEventListener('message', function(event) {
                                 if (event.data.type === 'httpRequest') {
                                     const requestId = event.data.id;
                                     const url = event.data.url;
@@ -499,49 +450,77 @@
                                     const headers = event.data.headers || {};
                                     const body = event.data.body;
                                     
-                                    try {
-                                        // Выполняем запрос из iframe (здесь нет CORS ограничений)
-                                        const response = await fetch(url, {
-                                            method: method,
-                                            headers: headers,
-                                            body: body
-                                        });
-                                        
-                                        const responseText = await response.text();
-                                        
-                                        // Отправляем ответ обратно
-                                        window.parent.postMessage({
-                                            type: 'httpResponse',
-                                            id: requestId,
-                                            success: true,
-                                            status: response.status,
-                                            statusText: response.statusText,
-                                            headers: Object.fromEntries(response.headers.entries()),
-                                            body: responseText
-                                        }, '*');
-                                        
-                                    } catch (error) {
-                                        // Отправляем ошибку
+                                    // Используем XMLHttpRequest вместо fetch (более надежно)
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open(method, url, true);
+                                    
+                                    // Устанавливаем таймаут
+                                    xhr.timeout = 15000;
+                                    
+                                    // Устанавливаем заголовки
+                                    Object.keys(headers).forEach(key => {
+                                        xhr.setRequestHeader(key, headers[key]);
+                                    });
+                                    
+                                    xhr.onload = function() {
+                                        try {
+                                            window.parent.postMessage({
+                                                type: 'httpResponse',
+                                                id: requestId,
+                                                success: true,
+                                                status: xhr.status,
+                                                statusText: xhr.statusText,
+                                                headers: xhr.getAllResponseHeaders(),
+                                                body: xhr.responseText
+                                            }, '*');
+                                        } catch (e) {
+                                            window.parent.postMessage({
+                                                type: 'httpResponse',
+                                                id: requestId,
+                                                success: false,
+                                                error: 'Failed to parse response: ' + e
+                                            }, '*');
+                                        }
+                                    };
+                                    
+                                    xhr.onerror = function() {
                                         window.parent.postMessage({
                                             type: 'httpResponse',
                                             id: requestId,
                                             success: false,
-                                            error: error.toString()
+                                            error: 'XHR Network Error'
+                                        }, '*');
+                                    };
+                                    
+                                    xhr.ontimeout = function() {
+                                        window.parent.postMessage({
+                                            type: 'httpResponse',
+                                            id: requestId,
+                                            success: false,
+                                            error: 'Request timeout'
+                                        }, '*');
+                                    };
+                                    
+                                    try {
+                                        xhr.send(body || null);
+                                    } catch (e) {
+                                        window.parent.postMessage({
+                                            type: 'httpResponse',
+                                            id: requestId,
+                                            success: false,
+                                            error: 'Failed to send request: ' + e
                                         }, '*');
                                     }
                                 }
                             });
                         <\/script>
                     </head>
-                    <body>
-                        <div style="display:none;">CORS Bypass Frame</div>
-                    </body>
+                    <body></body>
                     </html>
                 `;
             }
             
             setupMessageListener() {
-                // Слушаем ответы от iframe
                 window.addEventListener('message', (event) => {
                     if (event.data.type === 'httpResponse' && this.callbacks.has(event.data.id)) {
                         const callback = this.callbacks.get(event.data.id);
@@ -551,13 +530,13 @@
                             callback.resolve({
                                 status: event.data.status,
                                 statusText: event.data.statusText,
-                                headers: event.data.headers,
+                                headers: this.parseHeaders(event.data.headers),
                                 body: event.data.body,
                                 json: () => {
                                     try {
                                         return Promise.resolve(JSON.parse(event.data.body));
                                     } catch (e) {
-                                        return Promise.reject(e);
+                                        return Promise.reject(new Error('Invalid JSON: ' + e));
                                     }
                                 },
                                 text: () => Promise.resolve(event.data.body)
@@ -569,14 +548,48 @@
                 });
             }
             
+            parseHeaders(headersString) {
+                const headers = new Map();
+                if (headersString) {
+                    const lines = headersString.trim().split(/[\r\n]+/);
+                    lines.forEach(line => {
+                        const parts = line.split(': ');
+                        const header = parts.shift();
+                        const value = parts.join(': ');
+                        if (header) headers.set(header.toLowerCase(), value);
+                    });
+                }
+                return {
+                    get: (name) => headers.get(name.toLowerCase())
+                };
+            }
+            
             request(url, options = {}) {
                 return new Promise((resolve, reject) => {
                     const requestId = ++this.messageId;
                     
-                    // Сохраняем callback
                     this.callbacks.set(requestId, { resolve, reject });
                     
-                    // Отправляем запрос в iframe
+                    // Ждем загрузки iframe
+                    if (!this.iframe.contentWindow) {
+                        this.iframe.onload = () => {
+                            this.sendRequest(requestId, url, options, resolve, reject);
+                        };
+                    } else {
+                        this.sendRequest(requestId, url, options, resolve, reject);
+                    }
+                    
+                    setTimeout(() => {
+                        if (this.callbacks.has(requestId)) {
+                            this.callbacks.delete(requestId);
+                            reject(new Error('Request timeout (30s)'));
+                        }
+                    }, 30000);
+                });
+            }
+            
+            sendRequest(requestId, url, options, resolve, reject) {
+                try {
                     this.iframe.contentWindow.postMessage({
                         type: 'httpRequest',
                         id: requestId,
@@ -585,15 +598,10 @@
                         headers: options.headers || {},
                         body: options.body
                     }, '*');
-                    
-                    // Таймаут на случай если iframe не ответит
-                    setTimeout(() => {
-                        if (this.callbacks.has(requestId)) {
-                            this.callbacks.delete(requestId);
-                            reject(new Error('Request timeout'));
-                        }
-                    }, options.timeout || 15000);
-                });
+                } catch (e) {
+                    this.callbacks.delete(requestId);
+                    reject(new Error('Failed to send to iframe: ' + e));
+                }
             }
             
             get(url, options = {}) {
@@ -615,7 +623,7 @@
             }
         }
         
-        // ========== ОСНОВНОЙ КОД ПРИЛОЖЕНИЯ ==========
+        // ========== APP STATE ==========
         let currentOperation = null;
         let scanner = null;
         let scannedCodes = [];
@@ -623,13 +631,11 @@
         let deviceId = null;
         let corsBypass = null;
         
-        // Элементы страниц
         const pages = {
             main: document.getElementById('mainPage'),
             scanner: document.getElementById('scannerPage')
         };
         
-        // Элементы интерфейса
         const elements = {
             startBtn: document.getElementById('startBtn'),
             stopBtn: document.getElementById('stopBtn'),
@@ -650,19 +656,13 @@
             connectionTestResult: document.getElementById('connectionTestResult')
         };
         
-        // Получение настроек сервера
+        // ========== UTILITY FUNCTIONS ==========
         function getServerConfig() {
             const ip = elements.serverIp?.value || "10.63.0.249";
             const port = parseInt(elements.serverPort?.value || "22022");
-            
-            return {
-                host: ip,
-                port: port,
-                url: `http://${ip}:${port}`
-            };
+            return { host: ip, port: port, url: `http://${ip}:${port}` };
         }
         
-        // Обновление статуса подключения
         function updateConnectionStatus(status, updateBoth = false) {
             const statusTexts = {
                 'connected': { text: 'Подключен', color: '#28a745', dot: 'connected' },
@@ -684,7 +684,6 @@
             }
         }
         
-        // Проверка подключения к серверу (через iframe)
         async function testServerConnection() {
             const config = getServerConfig();
             const result = elements.connectionTestResult;
@@ -697,121 +696,63 @@
             try {
                 updateConnectionStatus('connecting', true);
                 
-                // Используем iframe для запроса
-                const response = await corsBypass.get(config.url, {
-                    timeout: 10000
-                });
+                const response = await corsBypass.get(config.url, { timeout: 10000 });
                 
                 if (response.status === 200) {
                     result.innerHTML = '✅ Сервер доступен!';
                     result.style.background = '#d4edda';
                     result.style.color = '#155724';
-                    
                     updateConnectionStatus('connected', true);
                     showNotification('Сервер подключен через iframe', 'success', 3000);
-                    
                     return true;
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
             } catch (error) {
                 result.innerHTML = `❌ Ошибка: ${error.message}`;
                 result.style.background = '#f8d7da';
                 result.style.color = '#721c24';
-                
                 updateConnectionStatus('disconnected', true);
-                showNotification('Не удалось подключиться', 'error', 4000);
-                
+                showNotification('Не удалось подключиться: ' + error.message, 'error', 4000);
                 return false;
             }
         }
         
-        // Переключение страниц
         function showPage(pageName) {
             Object.values(pages).forEach(page => page.classList.remove('active'));
-            
-            if (pages[pageName]) {
-                pages[pageName].classList.add('active');
-            }
-            
-            if (pageName === 'main' && isScanning) {
-                stopScanner();
-            }
+            if (pages[pageName]) pages[pageName].classList.add('active');
+            if (pageName === 'main' && isScanning) stopScanner();
         }
         
-        // Установка операции
         function setOperation(operationKey) {
             if (!OPERATIONS[operationKey]) return;
-            
             currentOperation = operationKey;
-            const operation = OPERATIONS[operationKey];
-            
-            elements.operationTitle.textContent = operation.name;
-            elements.operationBadge.textContent = operation.name;
-            
+            elements.operationTitle.textContent = OPERATIONS[operationKey].name;
+            elements.operationBadge.textContent = OPERATIONS[operationKey].name;
             showPage('scanner');
             loadSavedData();
         }
         
-        // Генерация ID устройства
         function generateDeviceId() {
             let id = localStorage.getItem('orto_device_id');
-            
             if (!id) {
-                const timestamp = Date.now().toString(36);
-                const random = Math.random().toString(36).substr(2, 9);
-                id = 'dev_' + timestamp + '_' + random;
+                id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('orto_device_id', id);
             }
-            
             return id;
         }
         
-        // Получение информации об устройстве
-        async function getDeviceInfo() {
-            return {
-                deviceId: deviceId,
-                operation: currentOperation,
-                operationCode: OPERATIONS[currentOperation]?.code,
-                operationName: OPERATIONS[currentOperation]?.name,
-                timestamp: new Date().toISOString(),
-                appVersion: '3.1'
-            };
-        }
-        
-        // Проверка поддержки камеры
-        function checkCameraSupport() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                elements.errorMessage.textContent = 'Ваш браузер не поддерживает камеру. Используйте Chrome или современный браузер.';
-                elements.errorMessage.style.display = 'block';
-                return false;
-            }
-            return true;
-        }
-        
-        // Загрузка сохраненных данных
         function loadSavedData() {
             const saved = localStorage.getItem(`orto_codes_${currentOperation}`);
-            if (saved) {
-                try {
-                    scannedCodes = JSON.parse(saved);
-                    updateUI();
-                    showNotification('Загружено: ' + scannedCodes.length + ' кодов', 'info');
-                } catch (e) {
-                    scannedCodes = [];
-                }
-            } else {
-                scannedCodes = [];
-            }
+            scannedCodes = saved ? JSON.parse(saved) : [];
+            updateUI();
+            if (scannedCodes.length > 0) showNotification('Загружено: ' + scannedCodes.length + ' кодов', 'info');
         }
         
-        // Сохранение данных
         function saveData() {
             localStorage.setItem(`orto_codes_${currentOperation}`, JSON.stringify(scannedCodes));
         }
         
-        // Обновление интерфейса
         function updateUI() {
             elements.count.textContent = scannedCodes.length;
             elements.clearBtn.disabled = scannedCodes.length === 0;
@@ -819,152 +760,78 @@
             
             if (scannedCodes.length > 0) {
                 let html = '';
-                const lastCodes = scannedCodes.slice(-10).reverse();
-                
-                lastCodes.forEach((code, index) => {
+                scannedCodes.slice(-10).reverse().forEach((code, index) => {
                     html += `<div class="code-item">${scannedCodes.length - index}. ${code}</div>`;
                 });
-                
                 elements.codesList.innerHTML = html;
             } else {
                 elements.codesList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Здесь будут отсканированные коды</div>';
             }
         }
         
-        // Показать уведомление
         function showNotification(message, type = 'info', duration = 3000) {
             elements.notification.textContent = message;
-            elements.notification.style.background = type === 'error' ? '#dc3545' : 
-                                                    type === 'success' ? '#28a745' : '#17a2b8';
+            elements.notification.style.background = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
             elements.notification.style.display = 'block';
-            
-            setTimeout(() => {
-                elements.notification.style.display = 'none';
-            }, duration);
+            setTimeout(() => { elements.notification.style.display = 'none'; }, duration);
         }
         
-        // Звуковой сигнал
         function playBeep(type = 'success') {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                
                 oscillator.frequency.value = type === 'success' ? 800 : 400;
-                oscillator.type = 'sine';
-                
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-                
-                oscillator.start(audioContext.currentTime);
+                oscillator.start();
                 oscillator.stop(audioContext.currentTime + 0.15);
-                
-            } catch (e) {
-                // Игнорируем ошибки аудио
-            }
+            } catch (e) {}
         }
         
-        // Запуск сканера
+        // ========== SCANNER FUNCTIONS ==========
         async function startScanner() {
-            if (isScanning) return;
-            
-            if (!checkCameraSupport()) {
+            if (isScanning || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                elements.errorMessage.style.display = 'block';
                 return;
             }
             
+            elements.errorMessage.style.display = 'none';
+            
             try {
-                elements.errorMessage.style.display = 'none';
-                
                 scanner = new Html5Qrcode("reader");
-                
-                await scanner.start(
-                    { facingMode: "environment" },
-                    {
-                        fps: 10,
-                        qrbox: 250
-                    },
-                    (decodedText) => {
-                        handleScan(decodedText);
-                    },
-                    (error) => {
-                        console.log('Scan error:', error);
-                    }
-                );
-                
+                await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, handleScan);
                 isScanning = true;
                 elements.startBtn.style.display = 'none';
                 elements.stopBtn.style.display = 'block';
                 showNotification('Сканер запущен', 'success');
-                
             } catch (error) {
-                console.error('Ошибка запуска камеры:', error);
-                
-                try {
-                    if (scanner) {
-                        await scanner.stop();
-                    }
-                    
-                    scanner = new Html5Qrcode("reader");
-                    
-                    await scanner.start(
-                        { facingMode: "user" },
-                        {
-                            fps: 10,
-                            qrbox: 200
-                        },
-                        (decodedText) => handleScan(decodedText),
-                        (error) => console.log('Scan error:', error)
-                    );
-                    
-                    isScanning = true;
-                    elements.startBtn.style.display = 'none';
-                    elements.stopBtn.style.display = 'block';
-                    showNotification('Используется фронтальная камера', 'warning');
-                    
-                } catch (secondError) {
-                    console.error('Ошибка фронтальной камеры:', secondError);
-                    showNotification('Не удалось запустить камеру', 'error');
-                    elements.errorMessage.style.display = 'block';
-                }
+                console.error('Ошибка камеры:', error);
+                showNotification('Не удалось запустить камеру', 'error');
             }
         }
         
-        // Обработка сканирования
         function handleScan(decodedText) {
-            try {
-                const code = decodedText.trim();
-                console.log('Распознан код:', code);
-                
-                if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
-                    playBeep('error');
-                    showNotification('❌ Неверный код', 'error');
-                    return;
-                }
-                
-                if (scannedCodes.includes(code)) {
-                    playBeep('error');
-                    showNotification('⚠️ Код уже отсканирован', 'warning');
-                    return;
-                }
-                
-                playBeep('success');
-                
-                scannedCodes.push(code);
-                saveData();
-                updateUI();
-                
-                showNotification('✅ Код добавлен', 'success');
-                
-            } catch (error) {
-                console.error('Ошибка обработки:', error);
+            const code = decodedText.trim();
+            if (!code.toLowerCase().startsWith(ORTO_PREFIX)) {
                 playBeep('error');
+                showNotification('❌ Неверный код', 'error');
+                return;
             }
+            if (scannedCodes.includes(code)) {
+                playBeep('error');
+                showNotification('⚠️ Код уже отсканирован', 'warning');
+                return;
+            }
+            playBeep('success');
+            scannedCodes.push(code);
+            saveData();
+            updateUI();
+            showNotification('✅ Код добавлен', 'success');
         }
         
-        // Остановка сканера
         async function stopScanner() {
             if (scanner && isScanning) {
                 try {
@@ -979,10 +846,8 @@
             }
         }
         
-        // Очистка списка
         function clearCodes() {
             if (scannedCodes.length === 0) return;
-            
             const count = scannedCodes.length;
             scannedCodes = [];
             localStorage.removeItem(`orto_codes_${currentOperation}`);
@@ -990,7 +855,7 @@
             showNotification(`🗑️ Очищено ${count} кодов`, 'warning');
         }
         
-        // Отправка данных на сервер через iframe
+        // ========== SEND DATA ==========
         async function sendToServer() {
             if (scannedCodes.length === 0 || !currentOperation) {
                 showNotification('Нет данных для отправки', 'error');
@@ -1001,16 +866,11 @@
                 elements.sendBtn.disabled = true;
                 elements.sendBtn.textContent = '📤 ОТПРАВКА...';
                 
-                const deviceInfo = await getDeviceInfo();
-                const operation = OPERATIONS[currentOperation];
-                const config = getServerConfig();
-                
-                // Подготавливаем данные
                 const data = {
-                    operation: operation.code,
-                    operationName: operation.name,
-                    deviceId: deviceInfo.deviceId,
-                    timestamp: deviceInfo.timestamp,
+                    operation: OPERATIONS[currentOperation].code,
+                    operationName: OPERATIONS[currentOperation].name,
+                    deviceId: deviceId,
+                    timestamp: new Date().toISOString(),
                     codes: scannedCodes,
                     totalCount: scannedCodes.length,
                     deviceInfo: {
@@ -1023,22 +883,23 @@
                 
                 updateConnectionStatus('connecting');
                 
-                // Отправляем через iframe (обход CORS)
-                const response = await corsBypass.post(config.url, data, {
-                    timeout: 15000
-                });
+                const config = getServerConfig();
+                const response = await corsBypass.post(config.url, data, { timeout: 15000 });
                 
                 if (response.status >= 200 && response.status < 300) {
                     showNotification(`✅ Отправлено ${scannedCodes.length} кодов`, 'success', 4000);
                     updateConnectionStatus('connected');
                     
-                    // Очищаем данные
-                    setTimeout(() => {
-                        clearCodes();
-                    }, 1000);
+                    // Показываем ответ сервера в консоли
+                    try {
+                        const serverResponse = await response.json();
+                        console.log('Ответ сервера:', serverResponse);
+                    } catch (e) {
+                        console.log('Ответ сервера (текст):', response.body);
+                    }
                     
-                    console.log('Ответ сервера:', response.body);
-                    
+                    // Очищаем через секунду
+                    setTimeout(clearCodes, 1000);
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -1047,27 +908,21 @@
                 console.error('Ошибка отправки:', error);
                 showNotification(`❌ Ошибка: ${error.message}`, 'error', 4000);
                 updateConnectionStatus('disconnected');
-                
-                // Сохраняем для повторной отправки
-                saveData();
-                
+                saveData(); // Сохраняем для повторной отправки
             } finally {
                 elements.sendBtn.disabled = false;
                 elements.sendBtn.textContent = '📤 ОТПРАВИТЬ НА СЕРВЕР';
             }
         }
         
-        // Инициализация
+        // ========== INITIALIZATION ==========
         function init() {
             deviceId = generateDeviceId();
             corsBypass = new CORSBypass();
             
-            // Инициализируем элементы управления
-            document.querySelectorAll('.menu-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const operation = e.currentTarget.getAttribute('data-operation');
-                    setOperation(operation);
-                });
+            // Event listeners
+            document.querySelectorAll('.menu-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => setOperation(e.currentTarget.dataset.operation));
             });
             
             elements.startBtn.addEventListener('click', startScanner);
@@ -1077,13 +932,7 @@
             elements.backBtn.addEventListener('click', () => showPage('main'));
             elements.testConnectionBtn.addEventListener('click', testServerConnection);
             
-            // Проверяем камеру
-            if (!checkCameraSupport()) {
-                return;
-            }
-            
-            console.log('Orto Scanner 3.1 готов. ID устройства:', deviceId);
-            console.log('CORS обход через iframe активирован');
+            console.log('Orto Scanner 3.2 готов. ID устройства:', deviceId);
         }
         
         document.addEventListener('DOMContentLoaded', init);
