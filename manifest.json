@@ -1,7 +1,7 @@
 {
-  "name": "QR Scanner PWA",
-  "short_name": "QR Scanner",
-  "description": "Приложение для сканирования QR-кодов. Работает офлайн.",
+  "name": "Производственная система",
+  "short_name": "Производство",
+  "description": "Система управления производственными процессами",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,46 +9,63 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-72x72.png",
+      "src": "assets/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-96x96.png",
+      "src": "assets/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-128x128.png",
+      "src": "assets/icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-144x144.png",
+      "src": "assets/icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-152x152.png",
+      "src": "assets/icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-192x192.png",
+      "src": "assets/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-384x384.png",
+      "src": "assets/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "assets/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-  "categories": ["utilities", "productivity"],
-  "lang": "ru"
+  "categories": ["business", "productivity"],
+  "lang": "ru",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Новый рулон",
+      "short_name": "Рулон",
+      "description": "Создать новый рулон",
+      "url": "/?module=create-roll",
+      "icons": [{ "src": "assets/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Отгрузка",
+      "short_name": "Отгрузка",
+      "description": "Отгрузка клиенту",
+      "url": "/?module=shipping",
+      "icons": [{ "src": "assets/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
 }

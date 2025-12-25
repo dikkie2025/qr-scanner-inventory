@@ -1,0 +1,94 @@
+<nav class="main-nav">
+    <div class="nav-container">
+        <div class="logo-container">
+            <img src="assets/images/orto.jpg" alt="Логотип" class="logo">
+            <div class="company-name">Производственная система</div>
+        </div>
+        
+        <ul class="nav-menu">
+            <li>
+                <a href="#" data-module="home" class="nav-link active">
+                    <span class="nav-icon">🏠</span>
+                    <span>Главная</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="create-roll" class="nav-link">
+                    <span class="nav-icon">📦</span>
+                    <span>Создание рулона</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="warehouse" class="nav-link">
+                    <span class="nav-icon">🏭</span>
+                    <span>Отгрузка на склад</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="coating" class="nav-link">
+                    <span class="nav-icon">🎨</span>
+                    <span>Нанесение покрытия</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="shipping" class="nav-link">
+                    <span class="nav-icon">🚚</span>
+                    <span>Отгрузка клиенту</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-content">
+    <header class="page-header">
+        <h1 class="page-title">Добро пожаловать в производственную систему</h1>
+        <p class="page-subtitle">Выберите необходимый процесс для работы</p>
+    </header>
+    
+    <div class="cards-container">
+        <div class="card" data-module="create-roll">
+            <div class="card-icon">📦</div>
+            <h3 class="card-title">Создание рулона</h3>
+            <p class="card-description">
+                Создание новых производственных рулонов с генерацией QR-кодов
+                для отслеживания
+            </p>
+        </div>
+        
+        <div class="card" data-module="warehouse">
+            <div class="card-icon">🏭</div>
+            <h3 class="card-title">Отгрузка на склад</h3>
+            <p class="card-description">
+                Отгрузка готовых рулонов на склад хранения
+                с использованием QR-сканирования
+            </p>
+        </div>
+        
+        <div class="card" data-module="coating">
+            <div class="card-icon">🎨</div>
+            <h3 class="card-title">Нанесение покрытия</h3>
+            <p class="card-description">
+                Процесс нанесения защитного покрытия
+                с обновлением статуса рулонов
+            </p>
+        </div>
+        
+        <div class="card" data-module="shipping">
+            <div class="card-icon">🚚</div>
+            <h3 class="card-title">Отгрузка клиенту</h3>
+            <p class="card-description">
+                Отгрузка готовой продукции клиентам
+                с подтверждением через QR-коды
+            </p>
+        </div>
+    </div>
+    
+    <div class="qr-scanner-container mt-20">
+        <h3 class="text-center mb-20">Быстрый доступ к QR-сканеру</h3>
+        <button class="btn btn-primary btn-block" onclick="app.loadModule('create-roll')">
+            <span>🔍</span>
+            <span>Открыть QR-сканер</span>
+        </button>
+    </div>
+</main>

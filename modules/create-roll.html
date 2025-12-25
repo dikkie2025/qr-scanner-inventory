@@ -1,0 +1,125 @@
+<nav class="main-nav">
+    <div class="nav-container">
+        <div class="logo-container">
+            <img src="assets/images/orto.jpg" alt="Логотип" class="logo">
+            <div class="company-name">Создание рулона</div>
+        </div>
+        
+        <ul class="nav-menu">
+            <li>
+                <a href="#" data-module="home" class="nav-link">
+                    <span class="nav-icon">🏠</span>
+                    <span>Главная</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="create-roll" class="nav-link active">
+                    <span class="nav-icon">📦</span>
+                    <span>Создание рулона</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="warehouse" class="nav-link">
+                    <span class="nav-icon">🏭</span>
+                    <span>Отгрузка на склад</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="coating" class="nav-link">
+                    <span class="nav-icon">🎨</span>
+                    <span>Нанесение покрытия</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-module="shipping" class="nav-link">
+                    <span class="nav-icon">🚚</span>
+                    <span>Отгрузка клиенту</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-content">
+    <header class="page-header">
+        <h1 class="page-title">Создание нового рулона</h1>
+        <p class="page-subtitle">Заполните информацию о новом рулоне</p>
+    </header>
+    
+    <div class="qr-scanner-container">
+        <h3 class="text-center mb-20">QR-сканер</h3>
+        <div class="video-container">
+            <video id="qr-video" class="qr-video"></video>
+            <div class="scan-overlay">
+                <div class="scan-animation"></div>
+            </div>
+        </div>
+        
+        <div id="scanner-status" class="text-center mb-20">
+            Нажмите "Запустить сканер" для начала
+        </div>
+        
+        <div class="controls">
+            <button id="start-scanner" class="btn btn-primary">
+                <span>▶️</span>
+                <span>Запустить сканер</span>
+            </button>
+            <button id="stop-scanner" class="btn btn-secondary hidden">
+                <span>⏹️</span>
+                <span>Остановить сканер</span>
+            </button>
+            <button id="generate-qr" class="btn btn-primary">
+                <span>🎫</span>
+                <span>Сгенерировать QR</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="form-container mt-20">
+        <form id="roll-form">
+            <div class="form-group">
+                <label class="form-label">Артикул рулона</label>
+                <input type="text" class="form-control" id="article" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Материал</label>
+                <select class="form-control" id="material" required>
+                    <option value="">Выберите материал</option>
+                    <option value="paper">Бумага</option>
+                    <option value="film">Плёнка</option>
+                    <option value="foil">Фольга</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Ширина (мм)</label>
+                <input type="number" class="form-control" id="width" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Диаметр (мм)</label>
+                <input type="number" class="form-control" id="diameter" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Вес (кг)</label>
+                <input type="number" class="form-control" id="weight" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">QR-код</label>
+                <input type="text" class="form-control" id="qr-code" readonly>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">
+                <span>💾</span>
+                <span>Сохранить рулон</span>
+            </button>
+        </form>
+    </div>
+    
+    <div id="roll-result" class="mt-20 hidden">
+        <!-- Результат будет отображаться здесь -->
+    </div>
+</main>
